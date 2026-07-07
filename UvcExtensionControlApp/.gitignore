@@ -1,0 +1,7 @@
+Makefile
+.qmake.stash
+UvcExtensionControlApp/obj
+UvcExtensionControlApp/bin
+.vs
+Debug
+Release

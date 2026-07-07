@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">UVC Camera</string>
+    <string name="label_device">USBカメラ</string>
+    <string name="label_resolution">解像度</string>
+    <string name="label_zoom">Zoom</string>
+    <string name="label_focus">Focus</string>
+    <string name="label_focus_auto">Auto</string>
+    <string name="label_exposure">Exposure</string>
+    <string name="label_brightness">Brightness</string>
+    <string name="no_device">USBカメラが接続されていません</string>
+</resources>

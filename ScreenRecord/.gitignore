@@ -1,0 +1,12 @@
+build*/
+*.user
+*.o
+*.obj
+moc_*
+ui_*
+qrc_*
+Makefile*
+ffmpeg.exe
+settings.ini
+*.mp4
+*.png

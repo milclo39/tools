@@ -1,0 +1,159 @@
+<Window x:Class="UvcExtensionControlApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="UVC Extension Unit 制御テストツール"
+        Width="900" Height="700"
+        MinWidth="760" MinHeight="560">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- デバイス選択 -->
+        <GroupBox Grid.Row="0" Header="デバイス" Padding="6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <ComboBox Grid.Column="0" Margin="0,0,6,0"
+                          ItemsSource="{Binding Devices}"
+                          SelectedItem="{Binding SelectedDevice}"
+                          DisplayMemberPath="FriendlyName"
+                          VerticalContentAlignment="Center"/>
+                <Button Grid.Column="1" Content="更新" Width="70" Margin="0,0,6,0"
+                        Command="{Binding RefreshDevicesCommand}"/>
+                <Button Grid.Column="2" Content="接続" Width="70" Margin="0,0,10,0"
+                        Command="{Binding ConnectCommand}"/>
+                <TextBlock Grid.Column="3" VerticalAlignment="Center"
+                           Text="{Binding ConnectionStatus}"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- 共通パラメータ -->
+        <GroupBox Grid.Row="1" Header="Extension Unit パラメータ" Padding="6" Margin="0,6,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="XU GUID:" VerticalAlignment="Center" Margin="0,0,6,4"/>
+                <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="5" Margin="0,0,6,4"
+                         Text="{Binding ExtensionGuidText, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalContentAlignment="Center"
+                         FontFamily="Consolas"/>
+                <Button Grid.Row="0" Grid.Column="6" Content="ノード一覧" Width="90" Margin="0,0,0,4"
+                        Command="{Binding EnumerateNodesCommand}"
+                        ToolTip="IKsTopologyInfo でフィルタ内ノードを列挙し、Extension Unit の有無を確認します"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="2" Text="Node ID:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <TextBox Grid.Row="1" Grid.Column="3" Margin="0,0,10,0"
+                         Text="{Binding NodeIdText, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalContentAlignment="Center" FontFamily="Consolas"/>
+                <TextBlock Grid.Row="1" Grid.Column="4" Text="CS:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <TextBox Grid.Row="1" Grid.Column="5" Margin="0,0,10,0"
+                         Text="{Binding ControlSelectorText, UpdateSourceTrigger=PropertyChanged}"
+                         VerticalContentAlignment="Center" FontFamily="Consolas"/>
+                <CheckBox Grid.Row="1" Grid.Column="6" Content="TOPOLOGYフラグ付与"
+                          VerticalAlignment="Center"
+                          IsChecked="{Binding UseTopologyFlag}"
+                          ToolTip="失敗する場合に KSPROPERTY_TYPE_TOPOLOGY フラグを併用して再試行できます"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- SET / GET -->
+        <Grid Grid.Row="2" Margin="0,6,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Grid.Column="0" Header="SET_CUR (送信)" Padding="6" Margin="0,0,3,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="データ (HEX):" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox Grid.Column="1" Margin="0,0,6,0"
+                             Text="{Binding SetDataText, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalContentAlignment="Center" FontFamily="Consolas"
+                             ToolTip="例: 01 / 0A FF 03"/>
+                    <Button Grid.Column="2" Content="送信 (SET_CUR)" Width="110"
+                            Command="{Binding SetCurCommand}"/>
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Grid.Column="1" Header="GET_CUR (受信)" Padding="6" Margin="3,0,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="受信長:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox Grid.Column="1" Margin="0,0,6,0"
+                             Text="{Binding GetLengthText, UpdateSourceTrigger=PropertyChanged}"
+                             VerticalContentAlignment="Center" FontFamily="Consolas"/>
+                    <Button Grid.Column="2" Content="受信 (GET_CUR)" Width="110" Margin="0,0,6,0"
+                            Command="{Binding GetCurCommand}"/>
+                    <Button Grid.Column="3" Content="クイックテスト" MinWidth="100"
+                            Command="{Binding QuickTestCommand}"
+                            ToolTip="Node=0x04, CS=0x0E, 受信長=2 の GET_CUR を実行 (期待レスポンス: 64 00)"/>
+                </Grid>
+            </GroupBox>
+        </Grid>
+
+        <!-- ログ -->
+        <GroupBox Grid.Row="3" Header="送受信ログ" Padding="6" Margin="0,6,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <DataGrid Grid.Row="0"
+                          ItemsSource="{Binding LogEntries}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          FontFamily="Consolas"
+                          SelectionUnit="FullRow">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="時刻" Binding="{Binding TimestampText}" Width="90"/>
+                        <DataGridTextColumn Header="種別" Binding="{Binding Direction}" Width="80"/>
+                        <DataGridTextColumn Header="Node" Binding="{Binding NodeId}" Width="55"/>
+                        <DataGridTextColumn Header="CS" Binding="{Binding ControlSelector}" Width="55"/>
+                        <DataGridTextColumn Header="データ (HEX)" Binding="{Binding DataHex}" Width="140"/>
+                        <DataGridTextColumn Header="結果" Binding="{Binding Result}" Width="120"/>
+                        <DataGridTextColumn Header="メッセージ" Binding="{Binding Message}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,6,0,0">
+                    <Button Content="コピー" Width="80" Margin="0,0,6,0" Command="{Binding CopyLogCommand}"/>
+                    <Button Content="エクスポート" Width="90" Margin="0,0,6,0" Command="{Binding ExportLogCommand}"/>
+                    <Button Content="クリア" Width="80" Command="{Binding ClearLogCommand}"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+    </Grid>
+</Window>
