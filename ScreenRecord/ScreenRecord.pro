@@ -19,3 +19,9 @@ win32 {
     LIBS += -luser32          # SetWindowDisplayAffinity
     DEFINES += NOMINMAX
 }
+
+macx {
+    HEADERS += machelper.h
+    OBJECTIVE_SOURCES += machelper.mm   # NSWindowSharingNone (キャプチャ除外)
+    LIBS += -framework AppKit
+}

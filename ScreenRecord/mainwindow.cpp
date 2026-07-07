@@ -23,6 +23,9 @@
 #    define WDA_EXCLUDEFROMCAPTURE 0x00000011
 #  endif
 #endif
+#ifdef Q_OS_MACOS
+#  include "machelper.h"
+#endif
 
 namespace {
 const char *kButtonStyle =
@@ -103,10 +106,14 @@ MainWindow::MainWindow(QWidget *parent)
     const QRect avail = QGuiApplication::primaryScreen()->availableGeometry();
     move(avail.right() - width() - 24, avail.bottom() - height() - 24);
 
+    // このツールバー自体を画面キャプチャから除外する
+    // (録画映像・スクリーンショットに写り込まなくなる)
 #ifdef Q_OS_WIN
-    // このツールバー自体を画面キャプチャから除外する (Windows 10 2004 以降)
-    // 録画映像・スクリーンショットに写り込まなくなる
+    // Windows 10 2004 以降
     SetWindowDisplayAffinity(reinterpret_cast<HWND>(winId()), WDA_EXCLUDEFROMCAPTURE);
+#endif
+#ifdef Q_OS_MACOS
+    macExcludeWindowFromCapture(winId());
 #endif
 }
 
@@ -140,11 +147,16 @@ void MainWindow::toggleRecording()
     }
 
     if (!Recorder::ffmpegExists()) {
+#ifdef Q_OS_WIN
+        const QString hint = tr("入手先: https://www.gyan.dev/ffmpeg/builds/ の\n"
+                                "\"release essentials\" ビルド (libx264 / libopus 同梱) を推奨します。");
+#else
+        const QString hint = tr("入手先: https://evermeet.cx/ffmpeg/ の静的ビルド、\n"
+                                "または Homebrew (brew install ffmpeg) のバイナリをコピーしてください。");
+#endif
         QMessageBox::warning(this, tr("ffmpeg が見つかりません"),
-            tr("ffmpeg.exe をアプリと同じフォルダに置いてください。\n\n%1\n\n"
-               "入手先: https://www.gyan.dev/ffmpeg/builds/ の\n"
-               "\"release essentials\" ビルド (libx264 / libopus 同梱) を推奨します。")
-                .arg(Recorder::ffmpegPath()));
+            tr("ffmpeg をアプリと同じフォルダに置いてください。\n\n%1\n\n%2")
+                .arg(Recorder::ffmpegPath(), hint));
         return;
     }
 
@@ -152,7 +164,8 @@ void MainWindow::toggleRecording()
     const QString mic = st.value(QStringLiteral("mic")).toString();
     const int fps     = st.value(QStringLiteral("fps"), 30).toInt();
 
-    m_recorder->start(targetPhysicalRect(), mic, fps);
+    const int screenIndex = QGuiApplication::screens().indexOf(targetScreen());
+    m_recorder->start(targetPhysicalRect(), qMax(0, screenIndex), mic, fps);
 }
 
 void MainWindow::setRecordingUi(bool recording)

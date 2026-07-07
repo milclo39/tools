@@ -42,6 +42,21 @@ ffmpeg -f gdigrab -framerate 30 -offset_x X -offset_y Y -video_size WxH -i deskt
 - **H.264**: コーデック自体に特許プールがありますが、ffmpeg.exe を別プロセスとして利用する構成のため、本アプリのコードには GPL の libx264 がリンクされません。ffmpeg.exe は各自でダウンロードして配置する形を想定しています。
 - 特許リスクを完全に避けたい場合は、`recorder.cpp` のエンコード指定を `libvpx-vp9` + `libopus` (WebM) に変えるのが最も確実です。
 
+## macOS 対応 (理論実装・未検証)
+
+コードは macOS でもビルド・動作する構成になっています (`#ifdef` 分岐)。
+
+- キャプチャは `avfoundation` を使用: `-f avfoundation -i "画面インデックス:マイクインデックス"`
+- デバイス列挙は `ffmpeg -f avfoundation -list_devices true -i ""` の出力を解析。
+  「Capture screen N」の N が Qt のモニター順と一致する前提です (未検証)
+- ffmpeg バイナリは `ffmpeg` (拡張子なし) をアプリと同じ場所へ。
+  入手: <https://evermeet.cx/ffmpeg/> または Homebrew (`brew install ffmpeg`)
+- .app バンドル実行時の保存先はバンドルの隣のフォルダになります
+- ツールバーの写り込み除外は `NSWindow.sharingType = NSWindowSharingNone` (machelper.mm)
+- 初回録画時に **「画面収録」と「マイク」の権限許可 (システム設定 > プライバシー)** が必要です。
+  拒否すると ffmpeg が真っ黒な映像を出力したり失敗したりします
+- ビルドは Qt Creator + macOS 用キット (clang) でそのまま `ScreenRecord.pro` を開くだけです
+
 ## 既知の注意点
 
 - **Opus in MP4** は ffmpeg 上 experimental 扱いのため `-strict -2` を付けています。VLC / Chrome / Edge では再生できますが、古いプレイヤー (旧 Windows Media Player 等) では音が出ないことがあります。互換性重視なら `recorder.cpp` の `libopus` を `aac` に変更してください。
