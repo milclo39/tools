@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">わんぽ</string>
+    <string name="notification_channel_name">散歩の記録中</string>
+    <string name="notification_title">散歩を記録しています</string>
+</resources>

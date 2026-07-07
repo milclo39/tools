@@ -52,7 +52,13 @@ class MainViewModel : ViewModel(), UvcCameraController.Listener {
     // ---- UIからの操作 ----
 
     fun refreshDeviceList() {
-        _devices.postValue(controller.getDeviceList())
+        val list = controller.getDeviceList()
+        _devices.postValue(list)
+        // onAttachが既接続デバイスで発火しない環境向けのフォールバック:
+        // 未選択なら先頭デバイスを自動選択(USB権限リクエストが走る)
+        if (controller.selectedDevice == null) {
+            list.firstOrNull()?.let { controller.selectDevice(it) }
+        }
     }
 
     fun selectDevice(device: UsbDevice) = controller.selectDevice(device)

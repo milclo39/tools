@@ -38,10 +38,6 @@ class MainActivity : AppCompatActivity() {
     private var resolutionList: List<Size> = emptyList()
     private var currentResolution: Size? = null
 
-    /** プログラムからSpinner選択を変更する際にリスナー発火を抑制するフラグ */
-    private var suppressDeviceSelection = false
-    private var suppressResolutionSelection = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -91,10 +87,8 @@ class MainActivity : AppCompatActivity() {
     private fun setupSpinners() {
         spinnerDevice.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                if (suppressDeviceSelection) {
-                    suppressDeviceSelection = false
-                    return
-                }
+                // selectDevice()は同一デバイスなら何もしないため、
+                // アダプタ設定直後の自動発火イベントも安全(未選択なら自動選択として機能する)
                 deviceList.getOrNull(pos)?.let { viewModel.selectDevice(it) }
             }
 
@@ -103,10 +97,6 @@ class MainActivity : AppCompatActivity() {
 
         spinnerResolution.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                if (suppressResolutionSelection) {
-                    suppressResolutionSelection = false
-                    return
-                }
                 resolutionList.getOrNull(pos)?.let { size ->
                     // 既に同じ解像度なら再ネゴシエーションしない
                     if (size.width == currentResolution?.width &&
@@ -142,12 +132,12 @@ class MainActivity : AppCompatActivity() {
             ).apply {
                 setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             }
-            suppressDeviceSelection = devices.isNotEmpty()
             spinnerDevice.adapter = adapter
             spinnerDevice.isEnabled = devices.isNotEmpty()
-            // 現在選択中のデバイスをSpinnerに反映
+            // 選択中デバイスがあればその位置へ。なければ位置0の自動発火イベントが
+            // そのまま先頭デバイスの自動選択(=USB権限リクエスト)になる
             val selectedIndex = devices.indexOf(viewModel.controller.selectedDevice)
-            if (selectedIndex >= 0) {
+            if (selectedIndex > 0) {
                 spinnerDevice.setSelection(selectedIndex)
             }
         }
@@ -184,7 +174,6 @@ class MainActivity : AppCompatActivity() {
         ).apply {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
-        suppressResolutionSelection = sizes.isNotEmpty()
         spinnerResolution.adapter = adapter
         spinnerResolution.isEnabled = sizes.isNotEmpty()
 

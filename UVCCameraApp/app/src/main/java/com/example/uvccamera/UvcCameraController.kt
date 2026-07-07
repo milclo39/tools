@@ -84,8 +84,9 @@ class UvcCameraController(private val listener: Listener) {
         }
 
         override fun onCameraOpen(device: UsbDevice) {
-            Log.d(TAG, "onCameraOpen")
             val helper = cameraHelper ?: return
+            Log.i(TAG, "onCameraOpen: size=${helper.previewSize}, " +
+                    "supported=${helper.supportedSizeList}, surface=${previewSurface != null}")
             helper.startPreview()
             previewSurface?.let { helper.addSurface(it, false) }
             listener.onCameraOpened(
@@ -154,6 +155,7 @@ class UvcCameraController(private val listener: Listener) {
     fun selectDevice(device: UsbDevice) {
         if (device == selectedDevice) return
         val helper = cameraHelper ?: return
+        Log.i(TAG, "selectDevice: ${device.deviceName} (${device.productName})")
         if (helper.isCameraOpened) {
             helper.closeCamera()
         }
