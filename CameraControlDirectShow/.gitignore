@@ -6,11 +6,8 @@ moc_*
 ui_*
 qrc_*
 Makefile*
-ffmpeg.exe
-settings.ini
-*.mp4
-*.png
 .qtc_clangd
 .qmake.stash
 debug
 release
+.vs
