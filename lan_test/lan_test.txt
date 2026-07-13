@@ -1,0 +1,34 @@
+#LANテストアプリ仕様
+##コマンド形式
+送信コマンドは11byteで、以下を16進数のバイナリで送信する。
+
+###コマンド
+- 電源オフ
+7F 08 99 A2 B3 C4 02 FF 01 01 CF
+- 電源オン
+7F 08 99 A2 B3 C4 02 FF 01 00 CF
+- HDMI1画面切替
+7F 08 99 A2 B3 C4 02 FF 01 0A CF
+- TYPE-C画面切替
+7F 08 99 A2 B3 C4 02 FF 01 54 CF
+- OPS画面切替
+7F 08 99 A2 B3 C4 02 FF 01 38 CF
+- Home画面切替
+7F 08 99 A2 B3 C4 02 FF 01 1C CF
+
+##起動試験コマンド
+電源オンと電源オフのコマンドを１分おきに交互に送信する
+
+##画面構成
+IPアドレスを指定して接続できるようにする
+手動の送信ボタン(各コマンド)と起動試験ボタン
+
+#memo
+[exe化]
+pip install pyinstaller
+pyinstaller --onefile --noconsole lan_test.py
+[icon対応]
+pyinstaller --onefile --noconsole --icon=app_icon.ico --add-data "app_icon.ico;." lan_test.py
+
+[画像適用exe化]
+pyinstaller --onefile --noconsole --icon=app_icon.ico --add-data "app_icon.ico;." --add-data "tako1.png;." lan_test.py
