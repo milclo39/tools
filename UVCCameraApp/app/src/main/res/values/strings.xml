@@ -9,4 +9,12 @@
     <string name="label_exposure">Exposure</string>
     <string name="label_brightness">Brightness</string>
     <string name="no_device">USBカメラが接続されていません</string>
+    <string name="record_start">録画開始</string>
+    <string name="record_stop">録画停止</string>
+    <string name="record_stopping">停止中…</string>
+    <string name="record_idle">録画待機中</string>
+    <string name="record_starting">録画を開始しています…</string>
+    <string name="recording_elapsed">● 録画中 %1$s</string>
+    <string name="record_audio_permission_required">録画にはマイクの権限が必要です</string>
+    <string name="record_saved">録画を保存しました</string>
 </resources>

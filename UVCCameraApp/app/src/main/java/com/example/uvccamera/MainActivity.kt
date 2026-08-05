@@ -1,17 +1,26 @@
 package com.example.uvccamera
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.hardware.usb.UsbDevice
 import android.os.Bundle
+import android.os.Environment
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.SurfaceHolder
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.serenegiant.usb.Size
 import com.serenegiant.widget.AspectRatioSurfaceView
 import java.util.Locale
@@ -24,6 +33,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var spinnerResolution: Spinner
     private lateinit var surfaceView: AspectRatioSurfaceView
     private lateinit var textNoDevice: TextView
+    private lateinit var buttonRecord: Button
+    private lateinit var textRecordingStatus: TextView
     private lateinit var seekZoom: SeekBar
     private lateinit var textZoomValue: TextView
     private lateinit var switchFocusAuto: SwitchCompat
@@ -37,6 +48,26 @@ class MainActivity : AppCompatActivity() {
     private var deviceList: List<UsbDevice> = emptyList()
     private var resolutionList: List<Size> = emptyList()
     private var currentResolution: Size? = null
+    private var recordingState = RecordingUiState()
+    private var startRecordingAfterPermission = false
+    private val recordingHandler = Handler(Looper.getMainLooper())
+    private val updateRecordingElapsed = object : Runnable {
+        override fun run() {
+            val startedAt = recordingState.startedAtElapsedRealtime ?: return
+            val elapsedSeconds = (SystemClock.elapsedRealtime() - startedAt) / 1_000
+            textRecordingStatus.text = getString(
+                R.string.recording_elapsed,
+                String.format(
+                    Locale.US,
+                    "%02d:%02d:%02d",
+                    elapsedSeconds / 3_600,
+                    (elapsedSeconds % 3_600) / 60,
+                    elapsedSeconds % 60
+                )
+            )
+            recordingHandler.postDelayed(this, 1_000)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +78,8 @@ class MainActivity : AppCompatActivity() {
         setupSpinners()
         setupControls()
         observeViewModel()
+
+        requestInitialPermissions()
     }
 
     override fun onResume() {
@@ -59,6 +92,8 @@ class MainActivity : AppCompatActivity() {
         spinnerResolution = findViewById(R.id.spinnerResolution)
         surfaceView = findViewById(R.id.surfaceView)
         textNoDevice = findViewById(R.id.textNoDevice)
+        buttonRecord = findViewById(R.id.buttonRecord)
+        textRecordingStatus = findViewById(R.id.textRecordingStatus)
         seekZoom = findViewById(R.id.seekZoom)
         textZoomValue = findViewById(R.id.textZoomValue)
         switchFocusAuto = findViewById(R.id.switchFocusAuto)
@@ -113,6 +148,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupControls() {
+        buttonRecord.setOnClickListener {
+            when (recordingState.status) {
+                RecordingStatus.IDLE -> startRecordingWhenPermitted()
+                RecordingStatus.STARTING, RecordingStatus.RECORDING -> viewModel.stopRecording()
+                RecordingStatus.STOPPING -> Unit
+            }
+        }
+
         switchFocusAuto.setOnCheckedChangeListener { _, isChecked ->
             viewModel.setFocusAuto(isChecked)
             seekFocus.isEnabled = !isChecked && seekFocus.max > 0
@@ -140,6 +183,7 @@ class MainActivity : AppCompatActivity() {
             if (selectedIndex > 0) {
                 spinnerDevice.setSelection(selectedIndex)
             }
+            updateRecordingControlAvailability()
         }
 
         viewModel.cameraState.observe(this) { state ->
@@ -153,6 +197,12 @@ class MainActivity : AppCompatActivity() {
                 updateResolutionSpinner(state.supportedSizes, state.currentSize)
                 applyControlStates(state.controls)
             }
+            updateRecordingControlAvailability()
+        }
+
+        viewModel.recordingState.observe(this) { state ->
+            recordingState = state
+            renderRecordingState()
         }
     }
 
@@ -183,6 +233,93 @@ class MainActivity : AppCompatActivity() {
         if (currentIndex >= 0) {
             spinnerResolution.setSelection(currentIndex)
         }
+        updateRecordingControlAvailability()
+    }
+
+    private fun requestInitialPermissions() {
+        val permissions = listOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+            .filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        if (permissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissions.toTypedArray(), REQUEST_INITIAL_PERMISSIONS)
+        }
+    }
+
+    private fun startRecordingWhenPermitted() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            startRecording()
+            return
+        }
+        startRecordingAfterPermission = true
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.RECORD_AUDIO),
+            REQUEST_RECORD_AUDIO
+        )
+    }
+
+    private fun startRecording() {
+        viewModel.startRecording(
+            contentResolver,
+            getExternalFilesDir(Environment.DIRECTORY_MOVIES)
+        )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != REQUEST_RECORD_AUDIO || !startRecordingAfterPermission) return
+
+        startRecordingAfterPermission = false
+        if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+            startRecording()
+        } else {
+            textRecordingStatus.text = getString(R.string.record_audio_permission_required)
+        }
+    }
+
+    private fun renderRecordingState() {
+        recordingHandler.removeCallbacks(updateRecordingElapsed)
+        when (recordingState.status) {
+            RecordingStatus.IDLE -> {
+                buttonRecord.text = getString(R.string.record_start)
+                textRecordingStatus.text = recordingState.message ?: getString(R.string.record_idle)
+            }
+
+            RecordingStatus.STARTING -> {
+                buttonRecord.text = getString(R.string.record_stop)
+                textRecordingStatus.text = getString(R.string.record_starting)
+            }
+
+            RecordingStatus.RECORDING -> {
+                buttonRecord.text = getString(R.string.record_stop)
+                updateRecordingElapsed.run()
+            }
+
+            RecordingStatus.STOPPING -> {
+                buttonRecord.text = getString(R.string.record_stopping)
+                textRecordingStatus.text = getString(R.string.record_stopping)
+            }
+        }
+        updateRecordingControlAvailability()
+    }
+
+    private fun updateRecordingControlAvailability() {
+        val recordingActive = recordingState.status != RecordingStatus.IDLE
+        spinnerDevice.isEnabled = deviceList.isNotEmpty() && !recordingActive
+        spinnerResolution.isEnabled = resolutionList.isNotEmpty() && !recordingActive
+        buttonRecord.isEnabled = when (recordingState.status) {
+            RecordingStatus.IDLE -> viewModel.cameraState.value != null
+            RecordingStatus.STARTING, RecordingStatus.RECORDING -> true
+            RecordingStatus.STOPPING -> false
+        }
+    }
+
+    override fun onDestroy() {
+        recordingHandler.removeCallbacks(updateRecordingElapsed)
+        super.onDestroy()
     }
 
     private fun resolutionLabel(size: Size): String {
@@ -268,5 +405,10 @@ class MainActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(sb: SeekBar) = Unit
             override fun onStopTrackingTouch(sb: SeekBar) = Unit
         })
+    }
+
+    private companion object {
+        const val REQUEST_INITIAL_PERMISSIONS = 1001
+        const val REQUEST_RECORD_AUDIO = 1002
     }
 }

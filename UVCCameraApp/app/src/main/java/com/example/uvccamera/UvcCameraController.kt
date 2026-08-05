@@ -1,10 +1,21 @@
 package com.example.uvccamera
 
+import android.content.ContentResolver
+import android.content.ContentValues
 import android.hardware.usb.UsbDevice
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
 import android.util.Log
 import com.herohan.uvcapp.CameraHelper
 import com.herohan.uvcapp.ICameraHelper
+import com.herohan.uvcapp.VideoCapture
 import com.serenegiant.usb.Size
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * UVCカメラ操作をまとめたControllerクラス。
@@ -60,10 +71,22 @@ class UvcCameraController(private val listener: Listener) {
         )
 
         fun onCameraClosed()
+
+        fun onRecordingStarting()
+
+        fun onRecordingStarted()
+
+        fun onRecordingStopping()
+
+        fun onRecordingSaved(uri: Uri?)
+
+        fun onRecordingError(message: String)
     }
 
     private var cameraHelper: ICameraHelper? = null
     private var previewSurface: Any? = null
+    private var recordingRequested = false
+    private var stopRequested = false
 
     var selectedDevice: UsbDevice? = null
         private set
@@ -99,6 +122,7 @@ class UvcCameraController(private val listener: Listener) {
 
         override fun onCameraClose(device: UsbDevice) {
             Log.d(TAG, "onCameraClose")
+            stopRecordingForCameraClose()
             previewSurface?.let { cameraHelper?.removeSurface(it) }
             listener.onCameraClosed()
         }
@@ -110,6 +134,7 @@ class UvcCameraController(private val listener: Listener) {
         override fun onDetach(device: UsbDevice) {
             Log.d(TAG, "onDetach: ${device.deviceName}")
             if (device == selectedDevice) {
+                stopRecordingForCameraClose()
                 selectedDevice = null
                 listener.onCameraClosed()
             }
@@ -128,13 +153,15 @@ class UvcCameraController(private val listener: Listener) {
     /** 初期化。Activity/ViewModel生成時に一度呼ぶ */
     fun init() {
         if (cameraHelper == null) {
-            cameraHelper = CameraHelper().apply {
-                setStateCallback(stateCallback)
-            }
+            val helper = CameraHelper()
+            configureRecording(helper, null)
+            helper.setStateCallback(stateCallback)
+            cameraHelper = helper
         }
     }
 
     fun release() {
+        stopRecording()
         cameraHelper?.release()
         cameraHelper = null
         selectedDevice = null
@@ -191,9 +218,129 @@ class UvcCameraController(private val listener: Listener) {
     fun setResolution(size: Size) {
         val helper = cameraHelper ?: return
         if (!helper.isCameraOpened) return
+        if (recordingRequested) {
+            Log.w(TAG, "Ignoring resolution change while recording")
+            return
+        }
+        configureRecording(helper, size)
         helper.stopPreview()
         helper.previewSize = size
         helper.startPreview()
+    }
+
+    /**
+     * MP4(H.264 + AAC)録画を開始する。
+     * 音声と映像はUVCAndroid内で同じMediaMuxerへ書き込まれるため、別ファイルを後から
+     * 結合する方式より長時間録画時の同期ずれを抑えられる。
+     */
+    fun startRecording(contentResolver: ContentResolver, legacyMoviesDirectory: File?) {
+        val helper = cameraHelper
+        if (helper == null || !helper.isCameraOpened) {
+            listener.onRecordingError("カメラが準備できていません")
+            return
+        }
+        if (recordingRequested) return
+
+        val options = runCatching {
+            createOutputFileOptions(contentResolver, legacyMoviesDirectory)
+        }.getOrElse {
+            Log.e(TAG, "Unable to create recording output", it)
+            listener.onRecordingError("録画ファイルを作成できませんでした")
+            return
+        }
+
+        // マイク権限が録画開始直前に許可された場合にも、AudioRecordを作り直す。
+        // CameraHelper内部の非同期キューでは設定変更がstartRecordingより先に実行される。
+        configureRecording(helper, helper.previewSize)
+        recordingRequested = true
+        stopRequested = false
+        listener.onRecordingStarting()
+
+        helper.startRecording(options, object : VideoCapture.OnVideoCaptureCallback {
+            override fun onStart() {
+                listener.onRecordingStarted()
+                if (stopRequested) {
+                    helper.stopRecording()
+                }
+            }
+
+            override fun onVideoSaved(outputFileResults: VideoCapture.OutputFileResults) {
+                recordingRequested = false
+                stopRequested = false
+                listener.onRecordingSaved(outputFileResults.savedUri)
+            }
+
+            override fun onError(videoCaptureError: Int, message: String, cause: Throwable?) {
+                Log.e(TAG, "Recording failed: $message", cause)
+                recordingRequested = false
+                stopRequested = false
+                listener.onRecordingError(message)
+            }
+        })
+    }
+
+    /** 停止完了はonRecordingSaved/onRecordingErrorで通知される非同期処理。 */
+    fun stopRecording() {
+        if (!recordingRequested || stopRequested) return
+        stopRequested = true
+        listener.onRecordingStopping()
+        cameraHelper?.stopRecording()
+    }
+
+    private fun stopRecordingForCameraClose() {
+        if (recordingRequested && !stopRequested) {
+            Log.i(TAG, "Camera closed while recording; finalizing available data")
+            stopRecording()
+        }
+    }
+
+    /** AAC 48 kHzを使い、講義音声に十分なビットレートで録音する。 */
+    private fun configureRecording(helper: ICameraHelper, size: Size?) {
+        val config = helper.videoCaptureConfig
+        config.setVideoFrameRate(30)
+        config.setBitRate(recordingBitRate(size))
+        config.setIFrameInterval(1)
+        config.setAudioCaptureEnable(true)
+        config.setAudioSampleRate(48_000)
+        config.setAudioChannelCount(1)
+        config.setAudioBitRate(128_000)
+        helper.setVideoCaptureConfig(config)
+    }
+
+    private fun recordingBitRate(size: Size?): Int = when {
+        size == null -> 8 * 1024 * 1024
+        size.width >= 3840 -> 24 * 1024 * 1024
+        size.width >= 1920 -> 8 * 1024 * 1024
+        size.width >= 1280 -> 5 * 1024 * 1024
+        else -> 2 * 1024 * 1024
+    }
+
+    private fun createOutputFileOptions(
+        contentResolver: ContentResolver,
+        legacyMoviesDirectory: File?
+    ): VideoCapture.OutputFileOptions {
+        val filename = "UVC_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.mp4"
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
+                put(
+                    MediaStore.MediaColumns.RELATIVE_PATH,
+                    "${Environment.DIRECTORY_MOVIES}${File.separator}UVC Camera"
+                )
+            }
+            VideoCapture.OutputFileOptions.Builder(
+                contentResolver,
+                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                values
+            ).build()
+        } else {
+            val directory = File(legacyMoviesDirectory ?: throw IllegalStateException("Movies directory unavailable"), "UVC Camera")
+            if (!directory.exists() && !directory.mkdirs()) {
+                throw IllegalStateException("Unable to create movies directory")
+            }
+            VideoCapture.OutputFileOptions.Builder(File(directory, filename)).build()
+        }
     }
 
     /** 起動時にGET_MIN/MAX/DEF/CURを取得してUIへ反映するための一括読み出し */

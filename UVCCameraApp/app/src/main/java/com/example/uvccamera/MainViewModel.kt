@@ -1,10 +1,14 @@
 package com.example.uvccamera
 
+import android.content.ContentResolver
 import android.hardware.usb.UsbDevice
+import android.net.Uri
+import android.os.SystemClock
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.serenegiant.usb.Size
+import java.io.File
 
 /**
  * カメラのオープン状態(対応解像度・コントロール範囲)
@@ -16,6 +20,19 @@ data class CameraUiState(
     val controls: UvcCameraController.ControlStates
 )
 
+enum class RecordingStatus {
+    IDLE,
+    STARTING,
+    RECORDING,
+    STOPPING
+}
+
+data class RecordingUiState(
+    val status: RecordingStatus = RecordingStatus.IDLE,
+    val startedAtElapsedRealtime: Long? = null,
+    val message: String? = null
+)
+
 class MainViewModel : ViewModel(), UvcCameraController.Listener {
 
     val controller = UvcCameraController(this)
@@ -25,6 +42,9 @@ class MainViewModel : ViewModel(), UvcCameraController.Listener {
 
     private val _cameraState = MutableLiveData<CameraUiState?>(null)
     val cameraState: LiveData<CameraUiState?> = _cameraState
+
+    private val _recordingState = MutableLiveData(RecordingUiState())
+    val recordingState: LiveData<RecordingUiState> = _recordingState
 
     init {
         controller.init()
@@ -47,6 +67,35 @@ class MainViewModel : ViewModel(), UvcCameraController.Listener {
 
     override fun onCameraClosed() {
         _cameraState.postValue(null)
+    }
+
+    override fun onRecordingStarting() {
+        _recordingState.postValue(RecordingUiState(RecordingStatus.STARTING))
+    }
+
+    override fun onRecordingStarted() {
+        _recordingState.postValue(
+            RecordingUiState(
+                status = RecordingStatus.RECORDING,
+                startedAtElapsedRealtime = SystemClock.elapsedRealtime()
+            )
+        )
+    }
+
+    override fun onRecordingStopping() {
+        _recordingState.postValue(RecordingUiState(RecordingStatus.STOPPING))
+    }
+
+    override fun onRecordingSaved(uri: Uri?) {
+        _recordingState.postValue(
+            RecordingUiState(
+                message = if (uri == null) "録画を保存しました" else "録画を保存しました: $uri"
+            )
+        )
+    }
+
+    override fun onRecordingError(message: String) {
+        _recordingState.postValue(RecordingUiState(message = "録画エラー: $message"))
     }
 
     // ---- UIからの操作 ----
@@ -78,6 +127,12 @@ class MainViewModel : ViewModel(), UvcCameraController.Listener {
     fun setExposure(value: Int) = controller.setExposure(value)
 
     fun setBrightness(value: Int) = controller.setBrightness(value)
+
+    fun startRecording(contentResolver: ContentResolver, legacyMoviesDirectory: File?) {
+        controller.startRecording(contentResolver, legacyMoviesDirectory)
+    }
+
+    fun stopRecording() = controller.stopRecording()
 
     override fun onCleared() {
         controller.release()

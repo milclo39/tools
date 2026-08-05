@@ -10,6 +10,9 @@ USB接続のUVCカメラをプレビュー表示し、UVCコマンドでパラ�
 - Zoom / Focus (Auto・Manual) / Exposure / Brightness の調整
   (いずれも GET_MIN / GET_MAX / GET_DEF / GET_CUR をスライダー範囲・初期値に反映。非対応コントロールは無効表示)
 - Exposure は内部でAEモードをManualへ切り替えてから値を送信(専用トグルなし)
+- 音声付きMP4録画 (H.264映像 + AAC-LC 48 kHz/128 kbps モノラル音声)
+  - 録画中はカメラ・解像度の切替をロックし、停止完了後にMP4を確定
+  - Android 10以降は `Movies/UVC Camera` に保存
 
 ## 構成
 
@@ -35,3 +38,12 @@ Android Studio は `gradle-wrapper.properties` の distributionUrl から自動�
 
 - USB Host対応のAndroid端末 (USB OTG)
 - UVC準拠のUSBカメラ
+- マイク権限 (`RECORD_AUDIO`。初回起動時にカメラ権限と合わせて確認)
+
+## 録画の確認
+
+1. カメラがプレビューできる状態で、`録画開始` を押す。
+2. 表示が `● 録画中` になったことを確認してから講義を開始する。
+3. 終了時は `録画停止` を押し、`録画を保存しました` が表示されるまでアプリを終了・カメラを取り外さない。
+
+音声と映像は同一の録画セッションでAAC/H.264としてMP4へ多重化する。講義利用では、開始時と終了時に拍手など明確な同期音を入れ、90分録画後に再生して開始・終了の両方でずれが2〜3秒以内であることを実機ごとに確認する。

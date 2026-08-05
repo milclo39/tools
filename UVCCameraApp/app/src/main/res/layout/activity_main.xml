@@ -74,6 +74,32 @@
             android:visibility="visible" />
     </FrameLayout>
 
+    <!-- 録画操作 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="8dp">
+
+        <Button
+            android:id="@+id/buttonRecord"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="@string/record_start" />
+
+        <TextView
+            android:id="@+id/textRecordingStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:text="@string/record_idle"
+            android:textSize="14sp" />
+    </LinearLayout>
+
     <!-- 下部: コントロールパネル -->
     <LinearLayout
         android:layout_width="match_parent"
