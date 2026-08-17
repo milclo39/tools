@@ -72,7 +72,11 @@
             z-index: 90;
         }
 
-        .controls { position: fixed; top: 15px; left: 15px; z-index: 100; display: flex; gap: 10px; flex-wrap: wrap; }
+        #menu-toggle {
+            position: fixed; top: 15px; left: 15px; z-index: 102;
+            font-weight: bold;
+        }
+        .controls { position: fixed; top: 15px; left: 70px; z-index: 100; display: flex; gap: 10px; flex-wrap: wrap; }
         .page-controls {
             position: fixed; top: 15px; right: 15px; z-index: 100;
             display: flex; align-items: center; gap: 8px;
@@ -115,11 +119,32 @@
         
         .color-btn { width: 28px; height: 28px; border-radius: 50%; padding: 0; border: 2px solid transparent; }
         .color-btn.selected { border-color: #555; transform: scale(1.15); }
-        .size-btn { width: 36px; height: 36px; background: transparent; border: 1px solid #eee; }
-        .size-btn.selected { background: #eef2ff; border-color: #3b82f6; }
-        .dot { background: #333; border-radius: 50%; display: block; }
-        .opacity-btn { width: auto; padding: 0 8px; font-size: 12px; font-weight: bold; height: 32px; background: white; border: 1px solid #ddd; color: #666; }
-        .opacity-btn.selected { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .brush-setting-title { font-size: 14px; font-weight: bold; color: #333; }
+        .brush-size-row { width: min(300px, 75vw); display: flex; align-items: center; gap: 10px; }
+        #brush-size-slider { flex: 1; height: 8px; margin: 0; appearance: none; -webkit-appearance: none; background: transparent; cursor: pointer; }
+        #brush-size-slider::-webkit-slider-runnable-track { height: 8px; background: #bfdbfe; border: 1px solid #93c5fd; border-radius: 999px; }
+        #brush-size-slider::-webkit-slider-thumb { width: 20px; height: 20px; margin-top: -7px; appearance: none; -webkit-appearance: none; background: #2563eb; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.35); }
+        #brush-size-slider::-moz-range-track { height: 8px; background: #bfdbfe; border: 1px solid #93c5fd; border-radius: 999px; }
+        #brush-size-slider::-moz-range-thumb { width: 16px; height: 16px; background: #2563eb; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.35); }
+        #brush-size-value { min-width: 42px; text-align: right; font-size: 13px; font-weight: bold; color: #333; }
+        .brush-preview { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; }
+        #brush-size-preview { background: #333; border-radius: 50%; max-width: 30px; max-height: 30px; }
+        #brush-alpha-note { font-size: 12px; color: #666; }
+        .help-panel { min-width: min(330px, 80vw); }
+        .help-panel h2 { margin: 0; font-size: 17px; }
+        .help-panel h3 { margin: 4px 0 0; font-size: 14px; }
+        .help-category { display: flex; flex-direction: column; gap: 6px; }
+        .help-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 7px; }
+        .help-item { display: flex; align-items: center; gap: 7px; padding: 6px; border-radius: 8px; background: #f8fafc; font-size: 11px; line-height: 1.35; color: #444; }
+        .help-item img { width: 28px; height: 28px; object-fit: contain; flex: 0 0 auto; }
+        .help-item strong { display: block; font-size: 12px; color: #1f2937; }
+        .help-symbol { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 6px; background: #e0e7ff; color: #3730a3; font-weight: bold; font-size: 17px; }
+        button:disabled { opacity: 0.35; cursor: not-allowed; }
+        body.menu-hidden .controls,
+        body.menu-hidden .page-controls,
+        body.menu-hidden .media-controls,
+        body.menu-hidden .popup-panel,
+        body.menu-hidden #zoom-controls { display: none !important; }
         .text-panel { min-width: 280px; }
         .text-panel textarea {
             width: 100%; min-height: 70px; box-sizing: border-box; resize: vertical;
@@ -138,8 +163,8 @@
         .text-action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
         .media-controls { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 25px; }
-        #snap-btn, #record-btn, #undo-btn, #timer-toggle-btn { width: 64px; height: 64px; border-radius: 50%; font-size: 26px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        #snap-btn img.icon-img, #record-btn img.icon-img, #undo-btn img.icon-img, #timer-toggle-btn img.icon-img {
+        #snap-btn, #record-btn, #undo-btn, #redo-btn, #timer-toggle-btn { width: 64px; height: 64px; border-radius: 50%; font-size: 26px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        #snap-btn img.icon-img, #record-btn img.icon-img, #undo-btn img.icon-img, #redo-btn img.icon-img, #timer-toggle-btn img.icon-img {
             width: 38px;
             height: 38px;
         }
@@ -154,8 +179,8 @@
             color: white; font-weight: bold; font-size: 14px;
         }
         #zoom-controls.show { display: flex; }
-        input[type=range] { flex: 1; height: 6px; -webkit-appearance: none; background: rgba(255,255,255,0.3); border-radius: 3px; outline: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #fff; border-radius: 50%; cursor: pointer; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        #zoom-slider { flex: 1; height: 6px; -webkit-appearance: none; background: rgba(255,255,255,0.3); border-radius: 3px; outline: none; }
+        #zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #fff; border-radius: 50%; cursor: pointer; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
 
         /* --- タイマーウィジェット用のスタイル (Compact & Integrated) --- */
         #timer-widget {
@@ -266,15 +291,18 @@
 </head>
 <body>
 
+<button id="menu-toggle" title="メニューを隠す" aria-label="メニューを隠す">☰</button>
+
 <div class="controls">
     <button id="zoom-mode-btn" title="ズームモード切替"><img class="icon-img" src="images/Hand_P.png" alt=""></button>
     <button id="bg-menu-btn" title="背景設定"><img class="icon-img" src="images/InsertImage.png" alt=""></button>
-    <button id="pen-tool-btn" class="active-tool" title="ペン"><img class="icon-img" src="images/MARKER_Black_P.png" alt=""></button>
+    <button id="pen-tool-btn" class="active-tool" title="ペン"><img class="icon-img" src="images/menu_pen1_black.png" alt="黒のペン"></button>
+    <button id="transparent-pen-tool-btn" title="透過ペン（25%）"><img class="icon-img" src="images/menu_pen2_black.png" alt="黒の透過ペン"></button>
     <button id="text-tool-btn" title="テキスト"><img class="icon-img" src="images/Text.png" alt=""></button>
     <button id="stamp-tool-btn" title="画像スタンプ"><img class="icon-img" src="images/Stamp.png" alt=""></button>
-    <!--button id="settings-toggle-btn" title="ペン設定">🎨</button-->
     <button id="eraser-btn" title="消しゴム"><img class="icon-img" src="images/Eraser_part_P.png" alt=""></button>
     <button id="clear-btn" title="全消去"><img class="icon-img" src="images/Eraser_all_P.png" alt=""></button>
+    <button id="help-btn" title="使い方">?</button>
 </div>
 
 <div class="page-controls" aria-label="ページ操作">
@@ -386,18 +414,51 @@
 </div>
 
 <div id="pen-settings" class="popup-panel">
+    <div id="brush-setting-title" class="brush-setting-title">ペン設定</div>
     <div class="setting-group" id="color-options"></div>
-    <div class="setting-group">
-        <button class="size-btn selected" data-size="5"><span class="dot" style="width:6px; height:6px;"></span></button>
-        <button class="size-btn" data-size="10"><span class="dot" style="width:12px; height:12px;"></span></button>
-        <button class="size-btn" data-size="20"><span class="dot" style="width:18px; height:18px;"></span></button>
-        <button class="size-btn" data-size="40"><span class="dot" style="width:24px; height:24px;"></span></button>
+    <div class="brush-size-row">
+        <input id="brush-size-slider" type="range" min="1" max="40" value="5" step="1" aria-label="ペンの太さ">
+        <span id="brush-size-value">5 px</span>
+        <span class="brush-preview"><span id="brush-size-preview"></span></span>
     </div>
-    <div class="setting-group">
-        <button class="opacity-btn selected" data-alpha="1.0">100%</button>
-        <button class="opacity-btn" data-alpha="0.75">75%</button>
-        <button class="opacity-btn" data-alpha="0.5">50%</button>
-        <button class="opacity-btn" data-alpha="0.25">25%</button>
+    <div id="brush-alpha-note">不透明（100%）</div>
+</div>
+
+<div id="help-panel" class="popup-panel help-panel">
+    <h2>使い方</h2>
+    <div class="help-category">
+        <h3>描く・消す</h3>
+        <div class="help-grid">
+            <div class="help-item"><img src="images/menu_pen1_black.png" alt=""><span><strong>ペン</strong>色と太さを設定して描きます。</span></div>
+            <div class="help-item"><img src="images/menu_pen2_black.png" alt=""><span><strong>透過ペン</strong>25% 固定で、別の色・太さを記憶します。</span></div>
+            <div class="help-item"><img src="images/Eraser_part_P.png" alt=""><span><strong>消しゴム</strong>25 px 固定で消します。</span></div>
+            <div class="help-item"><img src="images/Eraser_all_P.png" alt=""><span><strong>全消去</strong>表示中のページを消去します。</span></div>
+        </div>
+    </div>
+    <div class="help-category">
+        <h3>素材と編集</h3>
+        <div class="help-grid">
+            <div class="help-item"><img src="images/InsertImage.png" alt=""><span><strong>背景</strong>白・画像・カメラを選べます。</span></div>
+            <div class="help-item"><img src="images/Text.png" alt=""><span><strong>テキスト</strong>タップして文字を入力・編集します。</span></div>
+            <div class="help-item"><img src="images/Stamp.png" alt=""><span><strong>スタンプ</strong>画像を配置し、移動・拡大縮小できます。</span></div>
+            <div class="help-item"><img src="images/Hand_P.png" alt=""><span><strong>ズーム</strong>スライダーまたはピンチで拡大します。</span></div>
+        </div>
+    </div>
+    <div class="help-category">
+        <h3>履歴・保存</h3>
+        <div class="help-grid">
+            <div class="help-item"><img src="images/Undo.png" alt=""><span><strong>Undo / Redo</strong>操作を戻す・やり直すことができます。</span></div>
+            <div class="help-item"><img src="images/Capture_P.png" alt=""><span><strong>画像保存</strong>現在のページを PNG で保存します。</span></div>
+            <div class="help-item"><img src="images/Movie.png" alt=""><span><strong>録画</strong>描画の様子を動画に保存します。</span></div>
+            <div class="help-item"><img src="images/Timer.png" alt=""><span><strong>タイマー</strong>カウントダウンを表示します。</span></div>
+        </div>
+    </div>
+    <div class="help-category">
+        <h3>ページ・表示</h3>
+        <div class="help-grid">
+            <div class="help-item"><span class="help-symbol">←→</span><span><strong>ページ</strong>最大4ページ。矢印キーでも移動できます。</span></div>
+            <div class="help-item"><span class="help-symbol">☰</span><span><strong>メニュー</strong>操作パネルを隠してキャンバスを広く使えます。</span></div>
+        </div>
     </div>
 </div>
 
@@ -406,6 +467,7 @@
 
 <div class="media-controls">
     <button id="undo-btn" title="元に戻す"><img class="icon-img" src="images/Undo.png" alt=""></button>
+    <button id="redo-btn" title="やり直す"><img class="icon-img" style="transform:scaleX(-1)" src="images/Undo.png" alt=""></button>
     <button id="snap-btn" title="画像を保存"><img class="icon-img" src="images/Capture_P.png" alt=""></button>
     <button id="record-btn" title="録画開始/停止"><img class="icon-img" src="images/Movie.png" alt=""></button>
     <button id="timer-toggle-btn" title="タイマー"><img class="icon-img" src="images/Timer.png" alt=""></button>
@@ -424,12 +486,18 @@
     const STORAGE_KEY = 'ar_drawing_data_v8';
     const MAX_PAGES = 4;
     const colors = [
-        { code: '#000000' }, { code: '#FFFFFF' }, { code: '#EF4444' }, { code: '#F97316' },
-        { code: '#EAB308' }, { code: '#22C55E' }, { code: '#3B82F6' }, { code: '#A855F7' }
+        { code: '#000000', icon: 'black', label: '黒' }, { code: '#FFFFFF', icon: 'white', label: '白' },
+        { code: '#FF4B00', icon: 'red', label: '赤' }, { code: '#F6AA00', icon: 'orange', label: '橙' },
+        { code: '#FFF100', icon: 'yellow', label: '黄' }, { code: '#03AF7A', icon: 'green', label: '緑' },
+        { code: '#005AFF', icon: 'blue', label: '青' }, { code: '#4DC4ff', icon: 'lightblue', label: '水色' }
     ];
 
     let state = {
-        tool: 'pen', hexColor: '#000000', size: 5, alpha: 1.0, 
+        tool: 'pen', lastBrushTool: 'pen',
+        brushes: {
+            pen: { hexColor: '#000000', size: 5, alpha: 1.0 },
+            transparentPen: { hexColor: '#000000', size: 30, alpha: 0.25 }
+        },
         bgMode: 'white',
         cameraResolution: null, // { width, height } or null
         currentDeviceId: null,
@@ -464,6 +532,7 @@
     let dragMoveState = { active: false, index: -1, startX: 0, startY: 0, originalX: 0, originalY: 0 };
     let resizeState = { active: false, index: -1, startX: 0, startY: 0, originalWidth: 0, originalHeight: 0 };
     let undoHistory = [];
+    let redoHistory = [];
     
     let videoStream = null;
     let backgroundImage = null;
@@ -486,6 +555,12 @@
     const penSettingsPanel = document.getElementById('pen-settings');
     const bgSettingsPanel = document.getElementById('bg-settings');
     const textSettingsPanel = document.getElementById('text-settings');
+    const helpPanel = document.getElementById('help-panel');
+    const brushSizeSlider = document.getElementById('brush-size-slider');
+    const brushSizeValue = document.getElementById('brush-size-value');
+    const brushSizePreview = document.getElementById('brush-size-preview');
+    const brushSettingTitle = document.getElementById('brush-setting-title');
+    const brushAlphaNote = document.getElementById('brush-alpha-note');
     const textInput = document.getElementById('text-input');
     const textFontInput = document.getElementById('text-font');
     const textSizeInput = document.getElementById('text-size');
@@ -510,6 +585,8 @@
     const nextPageBtn = document.getElementById('next-page-btn');
     const addPageBtn = document.getElementById('add-page-btn');
     const pageIndicator = document.getElementById('page-indicator');
+    const undoBtn = document.getElementById('undo-btn');
+    const redoBtn = document.getElementById('redo-btn');
 
     // Timer Elements
     const timerWidget = document.getElementById('timer-widget');
@@ -535,6 +612,8 @@
         createColorButtons();
         setupEventListeners();
         loadFromStorage();
+        refreshBrushSettings();
+        updateHistoryUI();
         if (state.bgMode === 'camera') {
             startCameraStream(state.currentDeviceId);
         } else {
@@ -557,6 +636,7 @@
 
     function setupEventListeners() {
         document.getElementById('pen-tool-btn').onclick = switchToPen;
+        document.getElementById('transparent-pen-tool-btn').onclick = switchToTransparentPen;
         document.getElementById('text-tool-btn').onclick = switchToText;
         document.getElementById('stamp-tool-btn').onclick = switchToStamp;
         document.getElementById('eraser-btn').onclick = switchToEraser;
@@ -566,8 +646,15 @@
 //        };
         document.getElementById('bg-menu-btn').onclick = async (e) => {
             e.stopPropagation(); if(zoomState.active) return;
-            penSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.toggle('show');
+            penSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); bgSettingsPanel.classList.toggle('show');
             if (bgSettingsPanel.classList.contains('show')) await refreshCameraList();
+        };
+        document.getElementById('menu-toggle').onclick = toggleMenu;
+        document.getElementById('help-btn').onclick = (e) => {
+            e.stopPropagation();
+            if (zoomState.active) return;
+            penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show');
+            helpPanel.classList.toggle('show');
         };
 
         // Timer Toggle
@@ -636,7 +723,8 @@
             stampUploader.value = '';
         };
 
-        document.getElementById('undo-btn').onclick = undo;
+        undoBtn.onclick = undo;
+        redoBtn.onclick = redo;
         document.getElementById('clear-btn').onclick = clearAll;
         document.getElementById('snap-btn').onclick = takeSnapshot;
         document.getElementById('record-btn').onclick = toggleRecording;
@@ -645,12 +733,11 @@
         addPageBtn.onclick = addPage;
         document.addEventListener('keydown', handlePageKeyDown);
 
-        document.querySelectorAll('.size-btn').forEach(btn => {
-            btn.onclick = () => { state.size = parseInt(btn.dataset.size); updateUISelection('.size-btn', btn); };
-        });
-        document.querySelectorAll('.opacity-btn').forEach(btn => {
-            btn.onclick = () => { state.alpha = parseFloat(btn.dataset.alpha); updateUISelection('.opacity-btn', btn); };
-        });
+        brushSizeSlider.oninput = () => {
+            getActiveBrush().size = parseInt(brushSizeSlider.value, 10);
+            refreshBrushSettings();
+        };
+        brushSizeSlider.onchange = saveToStorage;
         [textBoldBtn, textItalicBtn, textUnderlineBtn, textStrikeBtn].forEach(btn => {
             btn.onclick = () => btn.classList.toggle('selected');
         });
@@ -833,7 +920,7 @@
         zoomState.active = !zoomState.active;
         if (zoomState.active) {
             zoomModeBtn.classList.add('zoom-active'); zoomControls.classList.add('show');
-            penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show');
+            penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show');
             setZoomLevel(1.0);
         } else {
             zoomModeBtn.classList.remove('zoom-active'); zoomControls.classList.remove('show');
@@ -908,8 +995,8 @@
                 stampUploader.click();
             }
         } else {
-            e.preventDefault(); const drawColor = getRgbaColor(state.hexColor, state.alpha);
-            const newPath = { id: e.pointerId, points: [{x: e.clientX, y: e.clientY}], tool: state.tool, color: drawColor, width: state.tool === 'eraser' ? 25 : state.size };
+            e.preventDefault(); const brush = getActiveBrush(); const drawColor = getRgbaColor(brush.hexColor, brush.alpha);
+            const newPath = { id: e.pointerId, points: [{x: e.clientX, y: e.clientY}], tool: state.tool, color: drawColor, width: state.tool === 'eraser' ? 25 : brush.size };
             activePointers.set(e.pointerId, newPath); viewport.setPointerCapture(e.pointerId); clearSelection(); redrawLines();
         }
     }
@@ -942,7 +1029,7 @@
         if (zoomState.active) { zoomState.isDragging = false; }
         else if (resizeState.active) { finishResizeDrag(e); }
         else if (dragMoveState.active) { finishMoveDrag(e); }
-        else { if (activePointers.has(e.pointerId)) { const path = activePointers.get(e.pointerId); paths.push(path); undoHistory.push({ type: 'add', index: paths.length - 1 }); activePointers.delete(e.pointerId); viewport.releasePointerCapture(e.pointerId); redrawLines(); saveToStorage(); } }
+        else { if (activePointers.has(e.pointerId)) { const path = activePointers.get(e.pointerId); paths.push(path); recordHistory({ type: 'add', index: paths.length - 1, item: cloneHistoryValue(path) }); activePointers.delete(e.pointerId); viewport.releasePointerCapture(e.pointerId); redrawLines(); saveToStorage(); } }
     }
 
     // --- 背景・カメラ制御 ---
@@ -1049,19 +1136,21 @@
 
     // --- ページ制御 ---
     function createBlankPage() {
-        return { paths: [], undoHistory: [] };
+        return { paths: [], undoHistory: [], redoHistory: [] };
     }
     function normalizePage(page) {
-        if (Array.isArray(page)) return { paths: page, undoHistory: [] };
+        if (Array.isArray(page)) return { paths: page, undoHistory: [], redoHistory: [] };
         return {
             paths: Array.isArray(page?.paths) ? page.paths : [],
-            undoHistory: Array.isArray(page?.undoHistory) ? page.undoHistory : []
+            undoHistory: Array.isArray(page?.undoHistory) ? page.undoHistory : [],
+            redoHistory: Array.isArray(page?.redoHistory) ? page.redoHistory : []
         };
     }
     function commitCurrentPage() {
         pages[currentPageIndex] = {
             paths,
-            undoHistory
+            undoHistory,
+            redoHistory
         };
     }
     function resetPageInteractionState() {
@@ -1087,9 +1176,11 @@
         currentPageIndex = index;
         paths = pages[currentPageIndex].paths;
         undoHistory = pages[currentPageIndex].undoHistory;
+        redoHistory = pages[currentPageIndex].redoHistory;
         resetPageInteractionState();
         redrawLines();
         updatePageUI();
+        updateHistoryUI();
         saveToStorage();
         return true;
     }
@@ -1102,7 +1193,16 @@
     function handlePageKeyDown(e) {
         const tag = document.activeElement?.tagName;
         const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement?.isContentEditable;
-        if (isTyping || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        if (isTyping) return;
+        const hasCommandKey = e.ctrlKey || e.metaKey;
+        const key = e.key.toLowerCase();
+        if (hasCommandKey && (key === 'y' || (key === 'z' && e.shiftKey))) {
+            e.preventDefault(); redo(); return;
+        }
+        if (hasCommandKey && key === 'z') {
+            e.preventDefault(); undo(); return;
+        }
+        if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
         if (e.key === 'ArrowLeft') {
             if (switchPage(currentPageIndex - 1)) e.preventDefault();
         } else if (e.key === 'ArrowRight') {
@@ -1175,7 +1275,7 @@
             height
         };
         paths.push(item);
-        undoHistory.push({ type: 'add', index: paths.length - 1 });
+        recordHistory({ type: 'add', index: paths.length - 1, item: cloneHistoryValue(item) });
         clearTextSelection();
         cancelText();
         redrawLines();
@@ -1333,7 +1433,7 @@
         if (item) {
             const moved = Math.abs(item.x - dragMoveState.originalX) > 0.5 || Math.abs(item.y - dragMoveState.originalY) > 0.5;
             if (moved) {
-                undoHistory.push({
+                recordHistory({
                     type: 'move',
                     index: dragMoveState.index,
                     previous: { x: dragMoveState.originalX, y: dragMoveState.originalY },
@@ -1353,7 +1453,7 @@
         if (item) {
             const resized = Math.abs(item.width - resizeState.originalWidth) > 0.5 || Math.abs(item.height - resizeState.originalHeight) > 0.5;
             if (resized) {
-                undoHistory.push({
+                recordHistory({
                     type: 'resize',
                     index: resizeState.index,
                     previous: { width: resizeState.originalWidth, height: resizeState.originalHeight },
@@ -1456,18 +1556,18 @@
             text,
             x: pendingTextPosition ? pendingTextPosition.x : selectedItem.x,
             y: pendingTextPosition ? pendingTextPosition.y : selectedItem.y,
-            color: pendingTextPosition ? getRgbaColor(state.hexColor, state.alpha) : selectedItem.color,
+            color: pendingTextPosition ? getRgbaColor(getActiveBrush().hexColor, getActiveBrush().alpha) : selectedItem.color,
             ...state.textStyle
         };
         if (hasSelectedText) {
             const previous = cloneTextItem(selectedItem);
             paths[selectedTextIndex] = newItem;
-            undoHistory.push({ type: 'update', index: selectedTextIndex, previous, next: cloneTextItem(newItem) });
+            recordHistory({ type: 'update', index: selectedTextIndex, previous, next: cloneTextItem(newItem) });
         } else {
             paths.push(newItem);
             selectedItemIndex = paths.length - 1;
             selectedTextIndex = selectedItemIndex;
-            undoHistory.push({ type: 'add', index: selectedItemIndex });
+            recordHistory({ type: 'add', index: selectedItemIndex, item: cloneHistoryValue(newItem) });
         }
         textSettingsPanel.classList.remove('show');
         pendingTextPosition = null;
@@ -1488,7 +1588,7 @@
         if (selectedItemIndex < 0 || !paths[selectedItemIndex] || paths[selectedItemIndex].type !== 'text') return;
         textClipboardItem = cloneTextItem(paths[selectedItemIndex]);
         const removed = paths.splice(selectedItemIndex, 1)[0];
-        undoHistory.push({ type: 'remove', index: selectedItemIndex, item: removed });
+        recordHistory({ type: 'remove', index: selectedItemIndex, item: cloneHistoryValue(removed) });
         selectedItemIndex = -1;
         selectedTextIndex = -1;
         pendingTextPosition = null;
@@ -1507,18 +1607,83 @@
         selectedItemIndex = paths.length - 1;
         selectedTextIndex = selectedItemIndex;
         pendingTextPosition = null;
-        undoHistory.push({ type: 'add', index: selectedItemIndex });
+        recordHistory({ type: 'add', index: selectedItemIndex, item: cloneHistoryValue(pasted) });
         textSettingsPanel.classList.remove('show');
         redrawLines();
         saveToStorage();
         updateTextActionButtons();
     }
-    function createColorButtons() { const c = document.getElementById('color-options'); colors.forEach(col => { const b = document.createElement('button'); b.className='color-btn'; b.style.backgroundColor=col.code; if(col.code==='#FFFFFF') b.style.border='1px solid #ccc'; if(col.code===state.hexColor) b.classList.add('selected'); b.onclick=()=>{ state.hexColor=col.code; updateUISelection('.color-btn',b); switchToPen(); }; c.appendChild(b); }); }
-    function updateUISelection(sel, btn) { document.querySelectorAll(sel).forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); }
+    function getActiveBrush() {
+        const brushTool = state.tool === 'transparentPen' ? 'transparentPen' : state.tool === 'pen' ? 'pen' : state.lastBrushTool;
+        return state.brushes[brushTool] || state.brushes.pen;
+    }
+    function getColorInfo(hexColor) {
+        const normalized = String(hexColor || '').toLowerCase();
+        return colors.find(color => color.code.toLowerCase() === normalized) || colors[0];
+    }
+    function updateBrushToolIcons() {
+        const penInfo = getColorInfo(state.brushes.pen.hexColor);
+        const transparentPenInfo = getColorInfo(state.brushes.transparentPen.hexColor);
+        const penButton = document.getElementById('pen-tool-btn');
+        const transparentPenButton = document.getElementById('transparent-pen-tool-btn');
+        const penIcon = penButton.querySelector('.icon-img');
+        const transparentPenIcon = transparentPenButton.querySelector('.icon-img');
+        penIcon.src = `images/menu_pen1_${penInfo.icon}.png`;
+        penIcon.alt = `${penInfo.label}のペン`;
+        penButton.title = `${penInfo.label}のペン`;
+        transparentPenIcon.src = `images/menu_pen2_${transparentPenInfo.icon}.png`;
+        transparentPenIcon.alt = `${transparentPenInfo.label}の透過ペン`;
+        transparentPenButton.title = `${transparentPenInfo.label}の透過ペン（25%）`;
+    }
+    function refreshBrushSettings() {
+        const brush = getActiveBrush();
+        const isTransparent = state.tool === 'transparentPen';
+        brushSizeSlider.value = brush.size;
+        brushSizeValue.textContent = `${brush.size} px`;
+        brushSizePreview.style.width = `${Math.min(brush.size, 30)}px`;
+        brushSizePreview.style.height = `${Math.min(brush.size, 30)}px`;
+        brushSizePreview.style.backgroundColor = brush.hexColor;
+        brushSettingTitle.textContent = isTransparent ? '透過ペン設定' : 'ペン設定';
+        brushAlphaNote.textContent = isTransparent ? '透過率 25%（固定）' : '不透明（100%）';
+        document.querySelectorAll('.color-btn').forEach(btn => btn.classList.toggle('selected', btn.dataset.color === brush.hexColor));
+        updateBrushToolIcons();
+    }
+    function hydrateBrushSettings(brushes, lastBrushTool) {
+        ['pen', 'transparentPen'].forEach(key => {
+            const saved = brushes?.[key];
+            if (!saved) return;
+            if (typeof saved.hexColor === 'string') state.brushes[key].hexColor = saved.hexColor;
+            if (Number.isFinite(saved.size)) state.brushes[key].size = Math.min(40, Math.max(1, saved.size));
+        });
+        state.brushes.pen.alpha = 1.0;
+        state.brushes.transparentPen.alpha = 0.25;
+        state.lastBrushTool = lastBrushTool === 'transparentPen' ? 'transparentPen' : 'pen';
+    }
+    function createColorButtons() {
+        const container = document.getElementById('color-options');
+        colors.forEach(col => {
+            const button = document.createElement('button');
+            button.className = 'color-btn';
+            button.dataset.color = col.code;
+            button.style.backgroundColor = col.code;
+            button.title = `${col.label}を選択`;
+            button.setAttribute('aria-label', `${col.label}を選択`);
+            if (col.code === '#FFFFFF') button.style.border = '1px solid #ccc';
+            button.onclick = () => { getActiveBrush().hexColor = col.code; refreshBrushSettings(); saveToStorage(); };
+            container.appendChild(button);
+        });
+        refreshBrushSettings();
+    }
     function setActiveToolButton(id) {
-        ['pen-tool-btn', 'text-tool-btn', 'stamp-tool-btn', 'eraser-btn'].forEach(btnId => {
+        ['pen-tool-btn', 'transparent-pen-tool-btn', 'text-tool-btn', 'stamp-tool-btn', 'eraser-btn'].forEach(btnId => {
             document.getElementById(btnId).classList.toggle('active-tool', btnId === id);
         });
+    }
+    function toggleMenu() {
+        const isHidden = document.body.classList.toggle('menu-hidden');
+        document.getElementById('menu-toggle').title = isHidden ? 'メニューを表示する' : 'メニューを隠す';
+        document.getElementById('menu-toggle').setAttribute('aria-label', isHidden ? 'メニューを表示する' : 'メニューを隠す');
+        if (isHidden) { penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); }
     }
     function clearStampMode() {
         pendingStampData = null;
@@ -1530,61 +1695,85 @@
         viewport.classList.add('stamp-mode');
         cancelText();
         clearTextSelection();
-        penSettingsPanel.classList.remove('show');
-        bgSettingsPanel.classList.remove('show');
+        penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show');
         setActiveToolButton('stamp-tool-btn');
         redrawLines();
     }
-    function switchToPen() { state.tool='pen'; viewport.classList.remove('text-mode'); clearStampMode(); cancelText(); clearTextSelection(); redrawLines(); setActiveToolButton('pen-tool-btn'); if(!zoomState.active) penSettingsPanel.classList.add('show'); bgSettingsPanel.classList.remove('show'); }
-    function switchToText() { state.tool='text'; clearStampMode(); viewport.classList.add('text-mode'); penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); setActiveToolButton('text-tool-btn'); }
+    function switchToBrush(brushTool) {
+        state.tool = brushTool;
+        state.lastBrushTool = brushTool;
+        viewport.classList.remove('text-mode'); clearStampMode(); cancelText(); clearTextSelection(); redrawLines();
+        setActiveToolButton(brushTool === 'pen' ? 'pen-tool-btn' : 'transparent-pen-tool-btn');
+        refreshBrushSettings();
+        if (!zoomState.active) penSettingsPanel.classList.add('show');
+        bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show');
+    }
+    function switchToPen() { switchToBrush('pen'); }
+    function switchToTransparentPen() { switchToBrush('transparentPen'); }
+    function switchToText() { state.tool='text'; clearStampMode(); viewport.classList.add('text-mode'); penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); setActiveToolButton('text-tool-btn'); }
     function switchToStamp() { activateStampMode(); stampUploader.click(); }
-    function switchToEraser() { state.tool='eraser'; viewport.classList.remove('text-mode'); clearStampMode(); cancelText(); clearTextSelection(); redrawLines(); setActiveToolButton('eraser-btn'); penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); }
+    function switchToEraser() { state.tool='eraser'; viewport.classList.remove('text-mode'); clearStampMode(); cancelText(); clearTextSelection(); redrawLines(); setActiveToolButton('eraser-btn'); penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); }
+    function cloneHistoryValue(value) { return value === undefined ? undefined : JSON.parse(JSON.stringify(value)); }
+    function recordHistory(action) { undoHistory.push(action); redoHistory = []; updateHistoryUI(); }
+    function updateHistoryUI() { undoBtn.disabled = undoHistory.length === 0; redoBtn.disabled = redoHistory.length === 0; }
+    function applyHistoryAction(action, direction) {
+        const undoing = direction === 'undo';
+        if (action.type === 'add') {
+            if (undoing) { const removed = paths.splice(action.index, 1)[0]; if (!action.item && removed) action.item = cloneHistoryValue(removed); }
+            else if (action.item) paths.splice(action.index, 0, cloneHistoryValue(action.item));
+        } else if (action.type === 'remove') {
+            if (undoing) paths.splice(action.index, 0, cloneHistoryValue(action.item));
+            else paths.splice(action.index, 1);
+        } else if (action.type === 'update') {
+            paths[action.index] = cloneHistoryValue(undoing ? action.previous : action.next);
+        } else if (action.type === 'move' && paths[action.index]) {
+            Object.assign(paths[action.index], undoing ? action.previous : action.next);
+        } else if (action.type === 'resize' && paths[action.index]) {
+            Object.assign(paths[action.index], undoing ? action.previous : action.next);
+        } else if (action.type === 'clear') {
+            paths = cloneHistoryValue(undoing ? action.before : action.after);
+        }
+    }
+    function finishHistoryChange() {
+        selectedItemIndex = -1; selectedTextIndex = -1; cancelText(); redrawLines(); updateHistoryUI(); saveToStorage();
+    }
     function undo() {
         const action = undoHistory.pop();
-        if (action) {
-            if (action.type === 'add') paths.splice(action.index, 1);
-            else if (action.type === 'remove') paths.splice(action.index, 0, action.item);
-            else if (action.type === 'update') paths[action.index] = action.previous;
-            else if (action.type === 'move' && paths[action.index]) {
-                paths[action.index].x = action.previous.x;
-                paths[action.index].y = action.previous.y;
-            }
-            else if (action.type === 'resize' && paths[action.index]) {
-                paths[action.index].width = action.previous.width;
-                paths[action.index].height = action.previous.height;
-            }
-        } else if(paths.length>0) {
-            paths.pop();
-        }
-        selectedItemIndex = -1;
-        selectedTextIndex = -1;
-        cancelText();
-        redrawLines();
-        saveToStorage();
+        if (!action) return;
+        applyHistoryAction(action, 'undo'); redoHistory.push(action); finishHistoryChange();
     }
-    function clearAll() { if(confirm('このページを全消去しますか？')){ paths=[]; undoHistory=[]; pages[currentPageIndex]=createBlankPage(); selectedItemIndex=-1; selectedTextIndex=-1; cancelText(); redrawLines(); saveToStorage(); } }
-    function saveToStorage() { try{commitCurrentPage();localStorage.setItem(STORAGE_KEY,JSON.stringify({version:9,currentPageIndex,pages}));}catch(e){} }
+    function redo() {
+        const action = redoHistory.pop();
+        if (!action) return;
+        applyHistoryAction(action, 'redo'); undoHistory.push(action); finishHistoryChange();
+    }
+    function clearAll() { if(confirm('このページを全消去しますか？')){ const before = cloneHistoryValue(paths); paths=[]; recordHistory({ type: 'clear', before, after: [] }); selectedItemIndex=-1; selectedTextIndex=-1; cancelText(); redrawLines(); saveToStorage(); } }
+    function saveToStorage() { try{commitCurrentPage();localStorage.setItem(STORAGE_KEY,JSON.stringify({version:10,currentPageIndex,pages,brushes:state.brushes,lastBrushTool:state.lastBrushTool}));}catch(e){} }
     function loadFromStorage() {
         const j=localStorage.getItem(STORAGE_KEY);
+        let savedData = null;
         if(j){
             try{
-                const data=JSON.parse(j);
-                if(Array.isArray(data)) {
-                    pages=[{paths:data,undoHistory:[]}];
+                savedData=JSON.parse(j);
+                if(Array.isArray(savedData)) {
+                    pages=[{paths:savedData,undoHistory:[],redoHistory:[]}];
                     currentPageIndex=0;
                 } else {
-                    pages=(Array.isArray(data.pages)?data.pages:[createBlankPage()]).slice(0,MAX_PAGES).map(normalizePage);
+                    pages=(Array.isArray(savedData.pages)?savedData.pages:[createBlankPage()]).slice(0,MAX_PAGES).map(normalizePage);
                     if(pages.length===0) pages=[createBlankPage()];
-                    currentPageIndex=Math.min(Math.max(parseInt(data.currentPageIndex)||0,0),pages.length-1);
+                    currentPageIndex=Math.min(Math.max(parseInt(savedData.currentPageIndex)||0,0),pages.length-1);
                 }
             }catch(e){
                 pages=[createBlankPage()];
                 currentPageIndex=0;
             }
         }
+        if (savedData?.brushes) hydrateBrushSettings(savedData.brushes, savedData.lastBrushTool);
         paths=pages[currentPageIndex].paths;
         undoHistory=pages[currentPageIndex].undoHistory;
+        redoHistory=pages[currentPageIndex].redoHistory;
         updatePageUI();
+        updateHistoryUI();
         redrawLines();
     }
     function takeSnapshot() { drawStaticBackground(); const t=document.createElement('canvas'); t.width=drawCanvas.width; t.height=drawCanvas.height; const tx=t.getContext('2d'); tx.drawImage(bgCanvas,0,0); tx.drawImage(drawCanvas,0,0); const l=document.createElement('a'); l.download=`drawing-${Date.now()}.png`; l.href=t.toDataURL('image/png'); l.click(); }
