@@ -76,26 +76,22 @@
             position: fixed; top: 15px; left: 15px; z-index: 102;
             font-weight: bold;
         }
-        .controls { position: fixed; top: 15px; left: 70px; z-index: 100; display: flex; gap: 10px; flex-wrap: wrap; }
         .page-controls {
             position: fixed; top: 15px; right: 15px; z-index: 100;
-            display: flex; align-items: center; gap: 8px;
-            background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(6px);
-            padding: 6px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.16);
+            display: flex; align-items: center;
         }
-        .page-controls button { width: 36px; height: 36px; font-size: 18px; box-shadow: none; }
-        .page-controls button:disabled { opacity: 0.35; cursor: not-allowed; }
+        #page-menu-btn { position: relative; }
+        #page-menu-btn svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
         #page-indicator {
-            min-width: 44px; text-align: center; font-size: 13px; font-weight: 700;
-            color: #333; line-height: 1;
+            position: absolute; right: -7px; bottom: -7px; min-width: 24px; padding: 2px 4px;
+            border-radius: 10px; background: #2563eb; color: white; text-align: center;
+            font-size: 10px; font-weight: 700; line-height: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.25);
         }
-        @media (max-width: 640px) {
-            .page-controls { top: 70px; }
-        }
-        @media (max-width: 420px) {
-            .page-controls { top: 125px; }
-        }
-        
+        .page-menu-title { color: #374151; font-size: 13px; font-weight: 700; }
+        .page-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .page-select-btn { width: 38px; height: 38px; font-size: 14px; box-shadow: none; border: 1px solid #d1d5db; }
+        .page-select-btn.selected { background: #2563eb; border-color: #2563eb; color: white; }
+        #add-page-btn { width: 100%; height: 38px; font-size: 13px; font-weight: bold; border: 1px dashed #93c5fd; color: #1d4ed8; box-shadow: none; }
         .popup-panel {
             position: fixed; top: 70px; left: 15px; z-index: 99;
             background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
@@ -104,6 +100,12 @@
             width: fit-content; max-width: 90vw; max-height: 80vh; overflow-y: auto;
         }
         .popup-panel.show { display: flex; }
+        .popup-panel.page-settings { left: auto; right: 15px; min-width: 190px; }
+        #pen-settings, #bg-settings, #help-panel {
+            top: auto; bottom: 74px; left: 50%; transform: translateX(-50%);
+            width: min(420px, calc(100vw - 24px)); box-sizing: border-box;
+            border-radius: 18px 18px 12px 12px;
+        }
         .setting-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
         .bg-option-btn { padding: 8px 12px; font-size: 14px; font-weight: bold; background: white; border: 1px solid #ddd; color: #444; border-radius: 6px; width: auto; }
@@ -129,7 +131,6 @@
         #brush-size-value { min-width: 42px; text-align: right; font-size: 13px; font-weight: bold; color: #333; }
         .brush-preview { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; }
         #brush-size-preview { background: #333; border-radius: 50%; max-width: 30px; max-height: 30px; }
-        #brush-alpha-note { font-size: 12px; color: #666; }
         .help-panel { min-width: min(330px, 80vw); }
         .help-panel h2 { margin: 0; font-size: 17px; }
         .help-panel h3 { margin: 4px 0 0; font-size: 14px; }
@@ -140,9 +141,9 @@
         .help-item strong { display: block; font-size: 12px; color: #1f2937; }
         .help-symbol { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 6px; background: #e0e7ff; color: #3730a3; font-weight: bold; font-size: 17px; }
         button:disabled { opacity: 0.35; cursor: not-allowed; }
-        body.menu-hidden .controls,
+        body.menu-hidden .bottom-toolbar,
         body.menu-hidden .page-controls,
-        body.menu-hidden .media-controls,
+        body.menu-hidden .bottom-sheet,
         body.menu-hidden .popup-panel,
         body.menu-hidden #zoom-controls { display: none !important; }
         .text-panel { min-width: 280px; }
@@ -162,18 +163,33 @@
         .text-action-btn.primary { background: #3b82f6; color: white; }
         .text-action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-        .media-controls { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 25px; }
-        #snap-btn, #record-btn, #undo-btn, #redo-btn, #timer-toggle-btn { width: 64px; height: 64px; border-radius: 50%; font-size: 26px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        #snap-btn img.icon-img, #record-btn img.icon-img, #undo-btn img.icon-img, #redo-btn img.icon-img, #timer-toggle-btn img.icon-img {
-            width: 38px;
-            height: 38px;
+        .bottom-toolbar {
+            position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 100;
+            display: flex; align-items: center; gap: 8px; padding: 7px;
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
+            border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.24);
         }
-        #record-btn .icon { width: 26px; height: 26px; background: #ef4444; border-radius: 50%; transition: all 0.3s; }
+        .bottom-toolbar button { width: 44px; height: 44px; box-shadow: none; }
+        .bottom-toolbar button img.icon-img { width: 28px; height: 28px; }
+        #more-tools-btn { font-size: 25px; font-weight: bold; letter-spacing: 1px; }
+        #more-tools-btn.open { background: #dbeafe; color: #1d4ed8; }
+        .bottom-sheet {
+            position: fixed; z-index: 101; bottom: 74px; left: 50%; transform: translateX(-50%);
+            display: none; flex-direction: column; gap: 10px; width: min(420px, calc(100vw - 24px));
+            box-sizing: border-box; padding: 12px; border-radius: 18px 18px 12px 12px;
+            background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(10px); box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+        }
+        .bottom-sheet.show { display: flex; }
+        .bottom-sheet-title { color: #374151; font-size: 13px; font-weight: 700; }
+        .sheet-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+        .sheet-action { width: 100%; height: 62px; padding: 4px 0; flex-direction: column; gap: 2px; background: transparent; box-shadow: none; color: #374151; font-size: 10px; }
+        .sheet-action img.icon-img { width: 28px; height: 28px; }
+        .sheet-action:active { background: #eff6ff; }
         #record-btn.recording { border: 4px solid rgba(239,68,68,0.3); background: white; }
-        #record-btn.recording .icon { border-radius: 4px; transform: scale(0.6); }
+        #record-btn.recording img.icon-img { transform: scale(0.75); }
 
         #zoom-controls {
-            position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%); z-index: 98;
+            position: fixed; bottom: 82px; left: 50%; transform: translateX(-50%); z-index: 102;
             width: 80%; max-width: 400px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
             padding: 10px 20px; border-radius: 20px; display: none; align-items: center; gap: 10px;
             color: white; font-weight: bold; font-size: 14px;
@@ -181,6 +197,13 @@
         #zoom-controls.show { display: flex; }
         #zoom-slider { flex: 1; height: 6px; -webkit-appearance: none; background: rgba(255,255,255,0.3); border-radius: 3px; outline: none; }
         #zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #fff; border-radius: 50%; cursor: pointer; box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        @media (max-width: 640px) {
+            #text-settings {
+                top: auto !important; right: auto; bottom: 74px; left: 50% !important;
+                width: min(420px, calc(100vw - 24px)); transform: translateX(-50%); box-sizing: border-box;
+                border-radius: 18px 18px 12px 12px;
+            }
+        }
 
         /* --- タイマーウィジェット用のスタイル (Compact & Integrated) --- */
         #timer-widget {
@@ -293,23 +316,17 @@
 
 <button id="menu-toggle" title="メニューを隠す" aria-label="メニューを隠す">☰</button>
 
-<div class="controls">
-    <button id="zoom-mode-btn" title="ズームモード切替"><img class="icon-img" src="images/Hand_P.png" alt=""></button>
-    <button id="bg-menu-btn" title="背景設定"><img class="icon-img" src="images/InsertImage.png" alt=""></button>
-    <button id="pen-tool-btn" class="active-tool" title="ペン"><img class="icon-img" src="images/menu_pen1_black.png" alt="黒のペン"></button>
-    <button id="transparent-pen-tool-btn" title="透過ペン（25%）"><img class="icon-img" src="images/menu_pen2_black.png" alt="黒の透過ペン"></button>
-    <button id="text-tool-btn" title="テキスト"><img class="icon-img" src="images/Text.png" alt=""></button>
-    <button id="stamp-tool-btn" title="画像スタンプ"><img class="icon-img" src="images/Stamp.png" alt=""></button>
-    <button id="eraser-btn" title="消しゴム"><img class="icon-img" src="images/Eraser_part_P.png" alt=""></button>
-    <button id="clear-btn" title="全消去"><img class="icon-img" src="images/Eraser_all_P.png" alt=""></button>
-    <button id="help-btn" title="使い方">?</button>
+<div class="page-controls" aria-label="ページ操作">
+    <button id="page-menu-btn" title="ページを選択" aria-label="ページを選択">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v5h5"></path><path d="M9 12h6M9 16h6"></path></svg>
+        <span id="page-indicator">1/1</span>
+    </button>
 </div>
 
-<div class="page-controls" aria-label="ページ操作">
-    <button id="prev-page-btn" title="前のページ">←</button>
-    <span id="page-indicator">1/1</span>
-    <button id="next-page-btn" title="次のページ">→</button>
-    <button id="add-page-btn" title="ページを追加">＋</button>
+<div id="page-settings" class="popup-panel page-settings" aria-label="ページを選択">
+    <div id="page-menu-title" class="page-menu-title">ページ 1 / 1</div>
+    <div id="page-options" class="page-options"></div>
+    <button id="add-page-btn" title="ページを追加">＋ ページ追加</button>
 </div>
 
 <div id="timer-widget">
@@ -421,7 +438,6 @@
         <span id="brush-size-value">5 px</span>
         <span class="brush-preview"><span id="brush-size-preview"></span></span>
     </div>
-    <div id="brush-alpha-note">不透明（100%）</div>
 </div>
 
 <div id="help-panel" class="popup-panel help-panel">
@@ -430,7 +446,7 @@
         <h3>描く・消す</h3>
         <div class="help-grid">
             <div class="help-item"><img src="images/menu_pen1_black.png" alt=""><span><strong>ペン</strong>色と太さを設定して描きます。</span></div>
-            <div class="help-item"><img src="images/menu_pen2_black.png" alt=""><span><strong>透過ペン</strong>25% 固定で、別の色・太さを記憶します。</span></div>
+            <div class="help-item"><img src="images/menu_pen2_red.png" alt=""><span><strong>透過ペン</strong>25% 固定で、別の色・太さを記憶します。</span></div>
             <div class="help-item"><img src="images/Eraser_part_P.png" alt=""><span><strong>消しゴム</strong>25 px 固定で消します。</span></div>
             <div class="help-item"><img src="images/Eraser_all_P.png" alt=""><span><strong>全消去</strong>表示中のページを消去します。</span></div>
         </div>
@@ -456,8 +472,8 @@
     <div class="help-category">
         <h3>ページ・表示</h3>
         <div class="help-grid">
-            <div class="help-item"><span class="help-symbol">←→</span><span><strong>ページ</strong>最大4ページ。矢印キーでも移動できます。</span></div>
-            <div class="help-item"><span class="help-symbol">☰</span><span><strong>メニュー</strong>操作パネルを隠してキャンバスを広く使えます。</span></div>
+            <div class="help-item"><span class="help-symbol">▤</span><span><strong>ページ</strong>右上のアイコンから選択。最大4ページです。</span></div>
+            <div class="help-item"><span class="help-symbol">⋯</span><span><strong>その他</strong>下部のメニューから追加機能を開きます。</span></div>
         </div>
     </div>
 </div>
@@ -465,12 +481,28 @@
 <input type="file" id="image-uploader" accept="image/*" style="display: none;">
 <input type="file" id="stamp-uploader" accept="image/png,image/*" style="display: none;">
 
-<div class="media-controls">
+<div class="bottom-toolbar" aria-label="描画ツール">
+    <button id="pen-tool-btn" class="active-tool" title="ペン"><img class="icon-img" src="images/menu_pen1_black.png" alt="黒のペン"></button>
+    <button id="transparent-pen-tool-btn" title="赤の透過ペン（25%）"><img class="icon-img" src="images/menu_pen2_red.png" alt="赤の透過ペン"></button>
+    <button id="eraser-btn" title="消しゴム"><img class="icon-img" src="images/Eraser_part_P.png" alt=""></button>
     <button id="undo-btn" title="元に戻す"><img class="icon-img" src="images/Undo.png" alt=""></button>
-    <button id="redo-btn" title="やり直す"><img class="icon-img" style="transform:scaleX(-1)" src="images/Undo.png" alt=""></button>
-    <button id="snap-btn" title="画像を保存"><img class="icon-img" src="images/Capture_P.png" alt=""></button>
-    <button id="record-btn" title="録画開始/停止"><img class="icon-img" src="images/Movie.png" alt=""></button>
-    <button id="timer-toggle-btn" title="タイマー"><img class="icon-img" src="images/Timer.png" alt=""></button>
+    <button id="more-tools-btn" title="その他の機能" aria-label="その他の機能">⋯</button>
+</div>
+
+<div id="more-sheet" class="bottom-sheet" aria-label="その他の機能">
+    <div class="bottom-sheet-title">その他の機能</div>
+    <div class="sheet-grid">
+        <button id="bg-menu-btn" class="sheet-action" title="背景設定"><img class="icon-img" src="images/InsertImage.png" alt=""><span>背景</span></button>
+        <button id="text-tool-btn" class="sheet-action" title="テキスト"><img class="icon-img" src="images/Text.png" alt=""><span>テキスト</span></button>
+        <button id="stamp-tool-btn" class="sheet-action" title="画像スタンプ"><img class="icon-img" src="images/Stamp.png" alt=""><span>スタンプ</span></button>
+        <button id="zoom-mode-btn" class="sheet-action" title="ズームモード切替"><img class="icon-img" src="images/Hand_P.png" alt=""><span>ズーム</span></button>
+        <button id="redo-btn" class="sheet-action" title="やり直す"><img class="icon-img" style="transform:scaleX(-1)" src="images/Undo.png" alt=""><span>Redo</span></button>
+        <button id="snap-btn" class="sheet-action" title="画像を保存"><img class="icon-img" src="images/Capture_P.png" alt=""><span>画像保存</span></button>
+        <button id="record-btn" class="sheet-action" title="録画開始/停止"><img class="icon-img" src="images/Movie.png" alt=""><span>録画</span></button>
+        <button id="timer-toggle-btn" class="sheet-action" title="タイマー"><img class="icon-img" src="images/Timer.png" alt=""><span>タイマー</span></button>
+        <button id="clear-btn" class="sheet-action" title="全消去"><img class="icon-img" src="images/Eraser_all_P.png" alt=""><span>全消去</span></button>
+        <button id="help-btn" class="sheet-action" title="使い方"><span class="help-symbol">?</span><span>使い方</span></button>
+    </div>
 </div>
 
 <div id="viewport">
@@ -496,7 +528,7 @@
         tool: 'pen', lastBrushTool: 'pen',
         brushes: {
             pen: { hexColor: '#000000', size: 5, alpha: 1.0 },
-            transparentPen: { hexColor: '#000000', size: 30, alpha: 0.25 }
+            transparentPen: { hexColor: '#FF4B00', size: 30, alpha: 0.25 }
         },
         bgMode: 'white',
         cameraResolution: null, // { width, height } or null
@@ -517,8 +549,6 @@
         active: false, scale: 1.0, translateX: 0, translateY: 0,
         isDragging: false, lastX: 0, lastY: 0, initialPinchDist: 0, initialScale: 1.0
     };
-    let pageSwipeState = { tracking: false, swiping: false, startX: 0, startY: 0 };
-
     let activePointers = new Map();
     let pages = [createBlankPage()];
     let currentPageIndex = 0;
@@ -560,7 +590,6 @@
     const brushSizeValue = document.getElementById('brush-size-value');
     const brushSizePreview = document.getElementById('brush-size-preview');
     const brushSettingTitle = document.getElementById('brush-setting-title');
-    const brushAlphaNote = document.getElementById('brush-alpha-note');
     const textInput = document.getElementById('text-input');
     const textFontInput = document.getElementById('text-font');
     const textSizeInput = document.getElementById('text-size');
@@ -581,12 +610,16 @@
     const zoomControls = document.getElementById('zoom-controls');
     const zoomSlider = document.getElementById('zoom-slider');
     const zoomText = document.getElementById('zoom-text');
-    const prevPageBtn = document.getElementById('prev-page-btn');
-    const nextPageBtn = document.getElementById('next-page-btn');
+    const pageMenuBtn = document.getElementById('page-menu-btn');
+    const pageSettingsPanel = document.getElementById('page-settings');
+    const pageOptions = document.getElementById('page-options');
+    const pageMenuTitle = document.getElementById('page-menu-title');
     const addPageBtn = document.getElementById('add-page-btn');
     const pageIndicator = document.getElementById('page-indicator');
     const undoBtn = document.getElementById('undo-btn');
     const redoBtn = document.getElementById('redo-btn');
+    const moreToolsBtn = document.getElementById('more-tools-btn');
+    const moreSheet = document.getElementById('more-sheet');
 
     // Timer Elements
     const timerWidget = document.getElementById('timer-widget');
@@ -646,20 +679,27 @@
 //        };
         document.getElementById('bg-menu-btn').onclick = async (e) => {
             e.stopPropagation(); if(zoomState.active) return;
-            penSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); bgSettingsPanel.classList.toggle('show');
+            closeMoreSheet();
+            penSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); pageSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.toggle('show');
             if (bgSettingsPanel.classList.contains('show')) await refreshCameraList();
         };
         document.getElementById('menu-toggle').onclick = toggleMenu;
+        moreToolsBtn.onclick = toggleMoreTools;
+        moreSheet.addEventListener('click', (e) => {
+            if (e.target.closest('.sheet-action')) closeMoreSheet();
+        });
         document.getElementById('help-btn').onclick = (e) => {
             e.stopPropagation();
             if (zoomState.active) return;
-            penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show');
+            closeMoreSheet();
+            penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show'); pageSettingsPanel.classList.remove('show');
             helpPanel.classList.toggle('show');
         };
 
         // Timer Toggle
         timerToggleBtn.onclick = (e) => {
             e.stopPropagation();
+            closeMoreSheet();
             state.isTimerVisible = !state.isTimerVisible;
             if(state.isTimerVisible) {
                 timerWidget.classList.add('show');
@@ -728,8 +768,7 @@
         document.getElementById('clear-btn').onclick = clearAll;
         document.getElementById('snap-btn').onclick = takeSnapshot;
         document.getElementById('record-btn').onclick = toggleRecording;
-        prevPageBtn.onclick = () => switchPage(currentPageIndex - 1);
-        nextPageBtn.onclick = () => switchPage(currentPageIndex + 1);
+        pageMenuBtn.onclick = togglePageMenu;
         addPageBtn.onclick = addPage;
         document.addEventListener('keydown', handlePageKeyDown);
 
@@ -920,7 +959,7 @@
         zoomState.active = !zoomState.active;
         if (zoomState.active) {
             zoomModeBtn.classList.add('zoom-active'); zoomControls.classList.add('show');
-            penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show');
+            penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); pageSettingsPanel.classList.remove('show');
             setZoomLevel(1.0);
         } else {
             zoomModeBtn.classList.remove('zoom-active'); zoomControls.classList.remove('show');
@@ -957,9 +996,9 @@
     function handleTouchEnd(e) {}
     function handlePointerDown(e) {
         // Prevent drawing if touching controls
-        if (e.target.closest('.controls') || e.target.closest('.page-controls') || e.target.closest('.popup-panel') || e.target.closest('#zoom-controls') || e.target.closest('#timer-widget')) return;
+        if (e.target.closest('.bottom-toolbar') || e.target.closest('.bottom-sheet') || e.target.closest('.page-controls') || e.target.closest('.popup-panel') || e.target.closest('#zoom-controls') || e.target.closest('#timer-widget')) return;
 
-        if (!zoomState.active) { penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); }
+        if (!zoomState.active) { penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); pageSettingsPanel.classList.remove('show'); closeMoreSheet(); }
         if (zoomState.active) {
             if (zoomState.scale > 1.0) { zoomState.isDragging = true; zoomState.lastX = e.clientX; zoomState.lastY = e.clientY; viewport.setPointerCapture(e.pointerId); }
         } else if (state.tool === 'text') {
@@ -1160,15 +1199,37 @@
         pendingTextPosition = null;
         dragMoveState = { active: false, index: -1, startX: 0, startY: 0, originalX: 0, originalY: 0 };
         resizeState = { active: false, index: -1, startX: 0, startY: 0, originalWidth: 0, originalHeight: 0 };
-        pageSwipeState = { tracking: false, swiping: false, startX: 0, startY: 0 };
         cancelText();
         updateTextActionButtons();
     }
     function updatePageUI() {
         pageIndicator.textContent = `${currentPageIndex + 1}/${pages.length}`;
-        prevPageBtn.disabled = currentPageIndex === 0;
-        nextPageBtn.disabled = currentPageIndex >= pages.length - 1;
+        pageMenuBtn.title = `ページ ${currentPageIndex + 1}/${pages.length} を選択`;
+        pageMenuBtn.setAttribute('aria-label', pageMenuBtn.title);
+        pageMenuTitle.textContent = `ページ ${currentPageIndex + 1} / ${pages.length}`;
+        pageOptions.innerHTML = '';
+        pages.forEach((_, index) => {
+            const button = document.createElement('button');
+            button.className = 'page-select-btn';
+            button.textContent = String(index + 1);
+            button.title = `${index + 1}ページ目を表示`;
+            button.classList.toggle('selected', index === currentPageIndex);
+            button.onclick = () => { pageSettingsPanel.classList.remove('show'); switchPage(index); };
+            pageOptions.appendChild(button);
+        });
         addPageBtn.disabled = pages.length >= MAX_PAGES;
+    }
+    function togglePageMenu(e) {
+        e.stopPropagation();
+        if (zoomState.active) return;
+        penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); closeMoreSheet();
+        const willShow = !pageSettingsPanel.classList.contains('show');
+        if (willShow) {
+            const buttonRect = pageMenuBtn.getBoundingClientRect();
+            pageSettingsPanel.style.top = `${buttonRect.bottom + 10}px`;
+            updatePageUI();
+        }
+        pageSettingsPanel.classList.toggle('show', willShow);
     }
     function switchPage(index) {
         if (index < 0 || index >= pages.length || index === currentPageIndex) return false;
@@ -1189,6 +1250,7 @@
         commitCurrentPage();
         pages.push(createBlankPage());
         switchPage(pages.length - 1);
+        pageSettingsPanel.classList.remove('show');
     }
     function handlePageKeyDown(e) {
         const tag = document.activeElement?.tagName;
@@ -1644,7 +1706,6 @@
         brushSizePreview.style.height = `${Math.min(brush.size, 30)}px`;
         brushSizePreview.style.backgroundColor = brush.hexColor;
         brushSettingTitle.textContent = isTransparent ? '透過ペン設定' : 'ペン設定';
-        brushAlphaNote.textContent = isTransparent ? '透過率 25%（固定）' : '不透明（100%）';
         document.querySelectorAll('.color-btn').forEach(btn => btn.classList.toggle('selected', btn.dataset.color === brush.hexColor));
         updateBrushToolIcons();
     }
@@ -1679,11 +1740,23 @@
             document.getElementById(btnId).classList.toggle('active-tool', btnId === id);
         });
     }
+    function closeMoreSheet() {
+        moreSheet.classList.remove('show');
+        moreToolsBtn.classList.remove('open');
+    }
+    function toggleMoreTools(e) {
+        e.stopPropagation();
+        if (document.body.classList.contains('menu-hidden')) return;
+        const willShow = !moreSheet.classList.contains('show');
+        penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); pageSettingsPanel.classList.remove('show');
+        moreSheet.classList.toggle('show', willShow);
+        moreToolsBtn.classList.toggle('open', willShow);
+    }
     function toggleMenu() {
         const isHidden = document.body.classList.toggle('menu-hidden');
         document.getElementById('menu-toggle').title = isHidden ? 'メニューを表示する' : 'メニューを隠す';
         document.getElementById('menu-toggle').setAttribute('aria-label', isHidden ? 'メニューを表示する' : 'メニューを隠す');
-        if (isHidden) { penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); }
+        if (isHidden) { penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); textSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); pageSettingsPanel.classList.remove('show'); closeMoreSheet(); }
     }
     function clearStampMode() {
         pendingStampData = null;
@@ -1695,24 +1768,28 @@
         viewport.classList.add('stamp-mode');
         cancelText();
         clearTextSelection();
-        penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show');
+        penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); pageSettingsPanel.classList.remove('show'); closeMoreSheet();
         setActiveToolButton('stamp-tool-btn');
         redrawLines();
     }
     function switchToBrush(brushTool) {
+        if (state.tool === brushTool && penSettingsPanel.classList.contains('show')) {
+            penSettingsPanel.classList.remove('show');
+            return;
+        }
         state.tool = brushTool;
         state.lastBrushTool = brushTool;
         viewport.classList.remove('text-mode'); clearStampMode(); cancelText(); clearTextSelection(); redrawLines();
         setActiveToolButton(brushTool === 'pen' ? 'pen-tool-btn' : 'transparent-pen-tool-btn');
         refreshBrushSettings();
         if (!zoomState.active) penSettingsPanel.classList.add('show');
-        bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show');
+        bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); pageSettingsPanel.classList.remove('show'); closeMoreSheet();
     }
     function switchToPen() { switchToBrush('pen'); }
     function switchToTransparentPen() { switchToBrush('transparentPen'); }
-    function switchToText() { state.tool='text'; clearStampMode(); viewport.classList.add('text-mode'); penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); setActiveToolButton('text-tool-btn'); }
+    function switchToText() { state.tool='text'; clearStampMode(); viewport.classList.add('text-mode'); penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); pageSettingsPanel.classList.remove('show'); closeMoreSheet(); setActiveToolButton('text-tool-btn'); }
     function switchToStamp() { activateStampMode(); stampUploader.click(); }
-    function switchToEraser() { state.tool='eraser'; viewport.classList.remove('text-mode'); clearStampMode(); cancelText(); clearTextSelection(); redrawLines(); setActiveToolButton('eraser-btn'); penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); }
+    function switchToEraser() { state.tool='eraser'; viewport.classList.remove('text-mode'); clearStampMode(); cancelText(); clearTextSelection(); redrawLines(); setActiveToolButton('eraser-btn'); penSettingsPanel.classList.remove('show'); bgSettingsPanel.classList.remove('show'); helpPanel.classList.remove('show'); pageSettingsPanel.classList.remove('show'); closeMoreSheet(); }
     function cloneHistoryValue(value) { return value === undefined ? undefined : JSON.parse(JSON.stringify(value)); }
     function recordHistory(action) { undoHistory.push(action); redoHistory = []; updateHistoryUI(); }
     function updateHistoryUI() { undoBtn.disabled = undoHistory.length === 0; redoBtn.disabled = redoHistory.length === 0; }
