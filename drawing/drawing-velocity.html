@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AR Drawing</title>
+    <title>AR Drawing - 速度ペンお試し版</title>
     <!-- Tone.js (タイマー音声用) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <style>
@@ -133,6 +133,8 @@
         #brush-size-preview { background: #333; border-radius: 50%; max-width: 30px; max-height: 30px; }
         .eraser-size-row { width: min(300px, 75vw); display: flex; align-items: center; gap: 10px; }
         #eraser-size-preview { background: #94a3b8; border-radius: 50%; max-width: 34px; max-height: 34px; }
+        .eraser-clear-btn { width: 100%; height: 42px; gap: 8px; color: #b91c1c; border: 1px solid #fecaca; box-shadow: none; font-size: 13px; font-weight: bold; }
+        .eraser-clear-btn img.icon-img { width: 25px; height: 25px; }
         .help-panel { min-width: min(330px, 80vw); }
         .help-panel h2 { margin: 0; font-size: 17px; }
         .help-panel h3 { margin: 4px 0 0; font-size: 14px; }
@@ -449,6 +451,7 @@
         <span id="eraser-size-value">25 px</span>
         <span class="brush-preview"><span id="eraser-size-preview"></span></span>
     </div>
+    <button id="clear-btn" class="eraser-clear-btn" title="全消去"><img class="icon-img" src="images/Eraser_all_P.png" alt="">全消去</button>
 </div>
 
 <div id="help-panel" class="popup-panel help-panel">
@@ -456,7 +459,7 @@
     <div class="help-category">
         <h3>描く・消す</h3>
         <div class="help-grid">
-            <div class="help-item"><img src="images/menu_pen1_black.png" alt=""><span><strong>ペン</strong>色と太さを設定して描きます。</span></div>
+            <div class="help-item"><img src="images/menu_pen1_black.png" alt=""><span><strong>ペン</strong>色と太さを設定して描きます。速く動かすほど線が細くなり、描き始め・描き終わりは設定した太さです。</span></div>
             <div class="help-item"><img src="images/menu_pen2_red.png" alt=""><span><strong>透過ペン</strong>25% 固定で、別の色・太さを記憶します。</span></div>
             <div class="help-item"><img src="images/Eraser_part_P.png" alt=""><span><strong>消しゴム</strong>10〜60 px で太さを設定します。</span></div>
             <div class="help-item"><img src="images/Eraser_all_P.png" alt=""><span><strong>全消去</strong>表示中のページを消去します。</span></div>
@@ -496,7 +499,6 @@
     <button id="pen-tool-btn" class="active-tool" title="ペン"><img class="icon-img" src="images/menu_pen1_black.png" alt="黒のペン"></button>
     <button id="transparent-pen-tool-btn" title="赤の透過ペン（25%）"><img class="icon-img" src="images/menu_pen2_red.png" alt="赤の透過ペン"></button>
     <button id="eraser-btn" title="消しゴム"><img class="icon-img" src="images/Eraser_part_P.png" alt=""></button>
-    <button id="clear-btn" title="全消去"><img class="icon-img" src="images/Eraser_all_P.png" alt=""></button>
     <button id="undo-btn" title="元に戻す"><img class="icon-img" src="images/Undo.png" alt=""></button>
     <button id="redo-btn" title="やり直す"><img class="icon-img" src="images/Redo.png" alt=""></button>
     <button id="page-menu-btn" title="ページを選択" aria-label="ページを選択"><img class="icon-img" src="images/WHITEBOARD.png" alt="ページ"><span id="page-indicator">1/1</span></button>
@@ -531,8 +533,22 @@
 </div>
 
 <script>
-    const STORAGE_KEY = 'ar_drawing_data_v8';
+    // 通常版と保存データを共有しない、お試し版専用のキー。
+    const STORAGE_KEY = 'ar_drawing_data_velocity_pen_v1';
     const MAX_PAGES = 4;
+    const VELOCITY_PEN = {
+        // px / ms。低速では通常の太さ、高速では最小太さに近づく。
+        fullWidthSpeed: 0.24,
+        thinWidthSpeed: 2.1,
+        // 太さは最大でも 40% だけ減少させる。極端な細線にはしない。
+        minWidthRatio: 0.60,
+        // これより細いペンは、読みやすさを優先して一定太さにする。
+        minimumVariableWidth: 12,
+        // 生の速度変化を強くならし、突然の太さ変化を防ぐ。
+        smoothing: 0.82,
+        // 離れたイベント間にも中間点を入れ、輪郭を滑らかにする。
+        interpolationSpacing: 12
+    };
     const colors = [
         { code: '#000000', icon: 'black', label: '黒' }, { code: '#FFFFFF', icon: 'white', label: '白' },
         { code: '#FF4B00', icon: 'red', label: '赤' }, { code: '#F6AA00', icon: 'orange', label: '橙' },
@@ -1065,7 +1081,17 @@
             }
         } else {
             e.preventDefault(); const brush = getActiveBrush(); const drawColor = getRgbaColor(brush.hexColor, brush.alpha);
-            const newPath = { id: e.pointerId, points: [{x: e.clientX, y: e.clientY}], tool: state.tool, color: drawColor, width: state.tool === 'eraser' ? state.eraserSize : brush.size };
+            const baseWidth = state.tool === 'eraser' ? state.eraserSize : brush.size;
+            const newPath = {
+                id: e.pointerId,
+                points: [{ x: e.clientX, y: e.clientY, width: baseWidth, time: e.timeStamp }],
+                tool: state.tool,
+                color: drawColor,
+                width: baseWidth,
+                // 消しゴムは従来どおり一定の太さにする。
+                velocityWidth: state.tool !== 'eraser' && baseWidth >= VELOCITY_PEN.minimumVariableWidth,
+                smoothedSpeed: 0
+            };
             activePointers.set(e.pointerId, newPath); viewport.setPointerCapture(e.pointerId); clearSelection(); redrawLines();
         }
     }
@@ -1091,14 +1117,66 @@
             item.y = dragMoveState.originalY + (e.clientY - dragMoveState.startY);
             redrawLines();
         } else {
-            if (!activePointers.has(e.pointerId)) return; const path = activePointers.get(e.pointerId); path.points.push({x: e.clientX, y: e.clientY}); redrawLines();
+            if (!activePointers.has(e.pointerId)) return;
+            const path = activePointers.get(e.pointerId);
+            // 対応ブラウザでは、描画の間にまとめられた細かな移動点も使う。
+            const events = typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [e];
+            for (const pointEvent of events.length ? events : [e]) addVelocityPoint(path, pointEvent);
+            redrawLines();
         }
     }
     function handlePointerUp(e) {
         if (zoomState.active) { zoomState.isDragging = false; }
         else if (resizeState.active) { finishResizeDrag(e); }
         else if (dragMoveState.active) { finishMoveDrag(e); }
-        else { if (activePointers.has(e.pointerId)) { const path = activePointers.get(e.pointerId); paths.push(path); recordHistory({ type: 'add', index: paths.length - 1, item: cloneHistoryValue(path) }); activePointers.delete(e.pointerId); viewport.releasePointerCapture(e.pointerId); redrawLines(); saveToStorage(); } }
+        else {
+            if (activePointers.has(e.pointerId)) {
+                const path = activePointers.get(e.pointerId);
+                // pointerup だけで太く戻すと終端が丸い「玉」になるため、
+                // 実際にゆっくり動いた点だけを通常の太さへ近づける。
+                addVelocityPoint(path, e);
+                delete path.smoothedSpeed;
+                paths.push(path);
+                recordHistory({ type: 'add', index: paths.length - 1, item: cloneHistoryValue(path) });
+                activePointers.delete(e.pointerId);
+                viewport.releasePointerCapture(e.pointerId);
+                redrawLines();
+                saveToStorage();
+            }
+        }
+    }
+
+    function addVelocityPoint(path, e) {
+        const previous = path.points[path.points.length - 1];
+        const dx = e.clientX - previous.x;
+        const dy = e.clientY - previous.y;
+        const distance = Math.hypot(dx, dy);
+        const elapsed = Math.max(1, e.timeStamp - previous.time);
+
+        if (distance < 0.01) return;
+
+        let targetWidth = path.width;
+        if (path.velocityWidth) {
+            const rawSpeed = distance / elapsed;
+            path.smoothedSpeed = path.smoothedSpeed * VELOCITY_PEN.smoothing + rawSpeed * (1 - VELOCITY_PEN.smoothing);
+            const speedRange = VELOCITY_PEN.thinWidthSpeed - VELOCITY_PEN.fullWidthSpeed;
+            const normalizedSpeed = Math.min(1, Math.max(0, (path.smoothedSpeed - VELOCITY_PEN.fullWidthSpeed) / speedRange));
+            targetWidth = path.width * (1 - normalizedSpeed * (1 - VELOCITY_PEN.minWidthRatio));
+        }
+
+        // イベント間を補間しておくと、大きく飛んだ座標でも太さが急に折れない。
+        const steps = Math.ceil(distance / VELOCITY_PEN.interpolationSpacing);
+        for (let step = 1; step <= steps; step++) {
+            const ratio = step / steps;
+            // 終点に向けてなだらかに太さを移行する。
+            const easedRatio = 1 - Math.pow(1 - ratio, 2);
+            path.points.push({
+                x: previous.x + dx * ratio,
+                y: previous.y + dy * ratio,
+                width: previous.width + (targetWidth - previous.width) * easedRatio,
+                time: previous.time + elapsed * ratio
+            });
+        }
     }
 
     // --- 背景・カメラ制御 ---
@@ -1316,6 +1394,41 @@
         else { drawCtx.globalCompositeOperation='source-over'; drawCtx.strokeStyle=path.color; }
         drawCtx.beginPath();
         if(p.length===1) { drawCtx.arc(p[0].x,p[0].y,path.width/2,0,Math.PI*2); if(path.tool!=='eraser') drawCtx.fillStyle=path.color; drawCtx.fill(); }
+        else if (path.velocityWidth && p.every(point => typeof point.width === 'number')) {
+            // 太さごとの左右の輪郭を1つの面として塗る。線分を重ねる方式より、
+            // 急な速度変化や曲線でもつなぎ目が目立ちにくい。
+            const left = [];
+            const right = [];
+            for (let i = 0; i < p.length; i++) {
+                const before = p[Math.max(0, i - 1)];
+                const after = p[Math.min(p.length - 1, i + 1)];
+                const dx = after.x - before.x;
+                const dy = after.y - before.y;
+                const length = Math.hypot(dx, dy) || 1;
+                const halfWidth = p[i].width / 2;
+                const normalX = -dy / length * halfWidth;
+                const normalY = dx / length * halfWidth;
+                left.push({ x: p[i].x + normalX, y: p[i].y + normalY });
+                right.push({ x: p[i].x - normalX, y: p[i].y - normalY });
+            }
+            drawCtx.beginPath();
+            drawCtx.moveTo(left[0].x, left[0].y);
+            for (let i = 1; i < left.length; i++) drawCtx.lineTo(left[i].x, left[i].y);
+            for (let i = right.length - 1; i >= 0; i--) drawCtx.lineTo(right[i].x, right[i].y);
+            drawCtx.closePath();
+            drawCtx.fillStyle = path.color;
+            drawCtx.fill();
+
+            // 透過ペンでは端の円を重ねるとそこだけ濃く見えるため、輪郭だけで終える。
+            if (path.tool !== 'transparentPen') {
+                drawCtx.beginPath();
+                drawCtx.arc(p[0].x, p[0].y, p[0].width / 2, 0, Math.PI * 2);
+                drawCtx.fill();
+                drawCtx.beginPath();
+                drawCtx.arc(p[p.length - 1].x, p[p.length - 1].y, p[p.length - 1].width / 2, 0, Math.PI * 2);
+                drawCtx.fill();
+            }
+        }
         else {
             drawCtx.moveTo(p[0].x,p[0].y);
             if(p.length<3) for(let i=1;i<p.length;i++) drawCtx.lineTo(p[i].x,p[i].y);
@@ -1874,7 +1987,7 @@
         if (!action) return;
         applyHistoryAction(action, 'redo'); undoHistory.push(action); finishHistoryChange();
     }
-    function clearAll() { const before = cloneHistoryValue(paths); paths=[]; recordHistory({ type: 'clear', before, after: [] }); selectedItemIndex=-1; selectedTextIndex=-1; cancelText(); redrawLines(); saveToStorage(); }
+    function clearAll() { if(confirm('このページを全消去しますか？')){ const before = cloneHistoryValue(paths); paths=[]; recordHistory({ type: 'clear', before, after: [] }); selectedItemIndex=-1; selectedTextIndex=-1; cancelText(); redrawLines(); saveToStorage(); } }
     function saveToStorage() { try{commitCurrentPage();localStorage.setItem(STORAGE_KEY,JSON.stringify({version:11,currentPageIndex,pages,brushes:state.brushes,lastBrushTool:state.lastBrushTool,eraserSize:state.eraserSize}));}catch(e){} }
     function loadFromStorage() {
         const j=localStorage.getItem(STORAGE_KEY);
